@@ -8,6 +8,8 @@ The researchers have determined that four key metrics differentiate between low,
 
 We aim to use these metrics at Redgate to help us focus on measuring and improving what matters.
 
+If you'd like to know more, see our blog at [ingeniouslysimple.com](https://medium.com/ingeniouslysimple/learning-from-the-accelerate-four-key-metrics-91725675e30a).
+
 ![Sample HTML report](img/sample-report.png)
 
 ## Implementation
