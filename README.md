@@ -8,6 +8,8 @@ The researchers have determined that four key metrics differentiate between low,
 
 We aim to use these metrics at Redgate to help us focus on measuring and improving what matters.
 
+![Sample HTML report](img/sample-report.png)
+
 ## Implementation
 We use the historical data stored in our `git` repositories to provide sufficiently-accurate measures for these metrics.
 
