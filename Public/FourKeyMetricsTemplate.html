@@ -1,0 +1,99 @@
+<head>
+    <script
+      type="text/javascript"
+      src="https://www.gstatic.com/charts/loader.js"
+    ></script>
+    <script type="text/javascript">
+      google.charts.load("current", { packages: ["corechart"] });
+      google.charts.setOnLoadCallback(drawChart);
+  
+      function drawChart() {
+        // Define the chart to be drawn.
+        var data = new google.visualization.DataTable();
+        data.addColumn("date", "EndDate");
+        data.addColumn("number", "Deployment Frequency");
+        data.addColumn("number", "Delivery Lead Time");
+        data.addColumn("number", "Change Failure Rate");
+        data.addColumn("number", "Mean Time to Recovery");
+  
+        data.addRows([
+          REPLACEME
+          /* e.g.
+            ["12 Months", 11.03, 3.67, 0.11, 1.47],
+            ["3 Months", 4.64, 1.51, 0.18, 1.47],
+            ["1 Months", 3.32, 1.38, 0.33, 1.47]
+          */
+        ]);
+  
+        const charts = [
+          [1, "deploy-freq", "Days", "#336dc2"],
+          [2, "lead-time", "Days", "#128024"],
+          [3, "fail-rate", "Percent", "#c00", "percent"],
+          [4, "mttr", "Hours", "#fc9003"]
+        ];
+  
+        charts.forEach(c => {
+          const [colIndex, elementId, vAxisTitle, color, format] = c;
+  
+          var dataView = new google.visualization.DataView(data);
+          dataView.setColumns([0, colIndex]);
+          var chart = new google.visualization.LineChart(
+            document.getElementById(elementId)
+          );
+          chart.draw(dataView, {
+            title: data.getColumnLabel(colIndex),
+            vAxis: { title: vAxisTitle, format, minValue: 0 },
+            legend: { position: "none" },
+            series: [{ color }],
+            chartArea: { width: "80%", height: "80%" },
+            pointSize: 6,
+            trendlines: { 0: { pointSize: 0 }},
+            interpolateNulls: true,
+            hAxis: {minValue: REPORTSTARTDATE, maxValue: REPORTENDDATE}
+          });
+        });
+      }
+    </script>
+    <style>
+      body {
+        font-family: Arial, Helvetica, sans-serif;
+      }
+      .grid-container {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        grid-template-rows: min-content 1fr 1fr;
+        grid-template-areas: "title title" "deploy-freq lead-time" "fail-rate mttr";
+        height: 100%;
+      }
+  
+      #Title {
+        grid-area: title;
+        text-align: center;
+      }
+  
+      #deploy-freq {
+        grid-area: deploy-freq;
+      }
+  
+      #lead-time {
+        grid-area: lead-time;
+      }
+  
+      #fail-rate {
+        grid-area: fail-rate;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="grid-container">
+      <div id="Title">
+        <h1>Four Key Metrics for REPLACEREPO</h1>
+        <p>(averaged over REPLACEWINDOWSIZE rolling window)</p>
+      </div>
+      <div id="deploy-freq"></div>
+      <div id="lead-time"></div>
+      <div id="fail-rate"></div>
+      <div id="mttr"></div>
+    </div>
+  </body>
+  

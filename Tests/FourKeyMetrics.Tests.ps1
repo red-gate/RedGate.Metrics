@@ -1,0 +1,264 @@
+#requires -Version 4 -Modules Pester
+
+. ../Public/FourKeyMetrics.ps1
+
+Describe 'Get-AverageMetricsForPeriod' {
+    Context 'Given no releases' {
+        $releases = @()
+
+        $endDate = [DateTime]"2019-05-21";
+
+        $averageMetrics = Get-AverageMetricsForPeriod $releases $endDate
+
+        It 'should return an empty set of metrics' {
+            $averageMetrics.Releases | Should -Be "0" # Explicitly provide zero releases
+            $averageMetrics.DeploymentFrequencyDays | Should -Be $null
+            $averageMetrics.MttrHours | Should -Be $null
+            $averageMetrics.LeadTimeDays | Should -Be $null
+            $averageMetrics.FailRate | Should -Be $null
+            $averageMetrics.EndDate | Should -Be $endDate
+        }
+    }
+
+    Context 'Given a single release' {
+        $release = [PSCustomObject]@{
+            From            = "releases/0.1";
+            To              = "releases/0.2";
+            FromDate        = [DateTime]"2019-05-16";
+            ToDate          = [DateTime]"2019-05-17";
+            Interval        = New-Timespan -D 14;
+            IsFix           = $false;
+            AverageCommitAge = New-Timespan -H 24;
+        }
+    
+        $releases = @($release)
+
+        It 'should return average metrics equal to the metrics of that release' {
+            $endDate = [DateTime]"2019-05-17"
+
+            $averageMetrics = Get-AverageMetricsForPeriod $releases $endDate
+
+            $averageMetrics.Releases | Should -Be "1" # Explicitly provide one release
+            $averageMetrics.DeploymentFrequencyDays | Should -Be "14" # Only 1 release, so the deployment frequency should be the same as the release interval
+            $averageMetrics.MttrHours | Should -Be $null # No recoveries in the provided dataset
+            $averageMetrics.LeadTimeDays | Should -Be "1" # Release has a lead time of one day
+            $averageMetrics.FailRate | Should -Be "0" # No failures
+            $averageMetrics.EndDate | Should -Be $endDate
+        }
+
+        It 'should not degrade the deployment frequency as time passes' {
+            $endDate = [DateTime]"2019-05-21"
+
+            $averageMetrics = Get-AverageMetricsForPeriod $releases $endDate
+
+            $averageMetrics.Releases | Should -Be "1" # Explicitly provide one release
+            $averageMetrics.DeploymentFrequencyDays | Should -Be "14" # Only 1 release, so the deployment frequency should be the same as the release interval
+            $averageMetrics.MttrHours | Should -Be $null # No recoveries in the provided dataset
+            $averageMetrics.LeadTimeDays | Should -Be "1" # Release has a lead time of one day
+            $averageMetrics.FailRate | Should -Be "0" # No failures
+            $averageMetrics.EndDate | Should -Be $endDate
+        }
+    }
+
+    Context 'Given a couple of releases' {
+        $releaseTwo = [PSCustomObject]@{
+            From            = "releases/0.2";
+            To              = "releases/0.3/fix";
+            FromDate        = [DateTime]"2019-05-17"
+            ToDate          = [DateTime]"2019-05-21"
+            Interval        = New-Timespan -D 4;
+            IsFix           = $true;
+            AverageCommitAge = New-Timespan -H 24;
+        }
+        
+        $releaseOne = [PSCustomObject]@{
+            From            = "releases/0.1";
+            To              = "releases/0.2";
+            FromDate        = [DateTime]"2019-05-16"
+            ToDate          = [DateTime]"2019-05-17"
+            Interval        = New-Timespan -D 1;
+            IsFix           = $false;
+            AverageCommitAge = New-Timespan -H 24;
+        }
+    
+        $releases = @($releaseTwo, $releaseOne)
+
+        $endDate = [DateTime]"2019-05-21"
+
+        $averageMetrics = Get-AverageMetricsForPeriod $releases $endDate
+
+        It 'should calculate the correct average metrics' {
+            $averageMetrics.Releases | Should -Be "2" # Explicitly provide two releases
+            $averageMetrics.DeploymentFrequencyDays | Should -Be "2.5" # Release intervals were 1 and 4, so average is 2.5
+            $averageMetrics.MttrHours | Should -Be 96 # Single recovery took four whole days
+            $averageMetrics.LeadTimeDays | Should -Be "1" # Both releases have a lead time of one day
+            $averageMetrics.FailRate | Should -Be "0.5" # One of two releases was a failure
+            $averageMetrics.EndDate | Should -Be $endDate
+        }
+    }
+}
+
+Describe 'Get-AverageReleaseMetrics' {
+    Context 'Given multiple releases, a lookback period of 1 month, a window size of 14 days, and a window interval of 7 days' {
+        $releases = @(
+            [PSCustomObject]@{
+                From            = "releases/0.0";
+                To              = "releases/0.1";
+                FromDate        = [DateTime]"2019-04-01"
+                ToDate          = [DateTime]"2019-05-13"
+                Interval        = New-Timespan -D 42;
+                IsFix           = $false;
+                AverageCommitAge = New-Timespan -D 20;},
+            [PSCustomObject]@{
+                From            = "releases/0.1";
+                To              = "releases/0.2";
+                FromDate        = [DateTime]"2019-05-13"
+                ToDate          = [DateTime]"2019-05-21"
+                Interval        = New-Timespan -D 8;
+                IsFix           = $false;
+                AverageCommitAge = New-Timespan -D 3.5;},
+            [PSCustomObject]@{
+                From            = "releases/0.2";
+                To              = "releases/0.3/fix";
+                FromDate        = [DateTime]"2019-05-21"
+                ToDate          = [DateTime]"2019-05-22"
+                Interval        = New-Timespan -D 1;
+                IsFix           = $true;
+                AverageCommitAge = New-Timespan -D 0.5;},
+            [PSCustomObject]@{
+                From            = "releases/0.3/fix";
+                To              = "releases/0.4";
+                FromDate        = [DateTime]"2019-05-22"
+                ToDate          = [DateTime]"2019-05-28"
+                Interval        = New-Timespan -D 6;
+                IsFix           = $false;
+                AverageCommitAge = New-Timespan -D 2;},
+            [PSCustomObject]@{
+                From            = "releases/0.4";
+                To              = "releases/0.5";
+                FromDate        = [DateTime]"2019-05-28"
+                ToDate          = [DateTime]"2019-06-04"
+                Interval        = New-Timespan -D 7;
+                IsFix           = $false;
+                AverageCommitAge = New-Timespan -D 4;}
+            );        
+
+        Mock Get-Date { return [DateTime]"2019-06-07"}
+
+        $metrics = Get-AverageReleaseMetrics $releases -lookbackMonths 1 -windowSizeDays 14 -windowIntervalDays 7 | Sort-Object -Property EndDate -Descending
+
+        It 'should provide results for windows going back for a month at 7 day intervals starting at the current date' {
+            $metrics | %{ $_.EndDate } | Should -Be @(
+                [DateTime]"2019-06-07", #24-May to 7-Jun
+                [DateTime]"2019-05-31", #17-May to 31-May
+                [DateTime]"2019-05-24", #10-May to 24-May
+                [DateTime]"2019-05-17", # 3-May to 17-May
+                [DateTime]"2019-05-10") # 26-Apr to 10-May
+        }
+
+        It 'should provide averages looking back over the 14 day window' {
+            $metrics | %{ $_.Releases }                | Should -Be @(2,     3,    3,    1,    0    )
+            $metrics | %{ $_.DeploymentFrequencyDays } | Should -Be @(6.5,   5,    17,   42,   $null)
+            $metrics | %{ $_.LeadTimeDays }            | Should -Be @(3,     2,    8,    20,   $null)
+            $metrics | %{ $_.FailRate }                | Should -Be @(0,    (1/3),(1/3), 0,    $null)
+            $metrics | %{ $_.MttrHours }               | Should -Be @($null, 24,   24,  $null, $null)
+        }
+    }
+}
+
+Describe 'Assert-ReleaseShouldBeConsidered' {
+    Context 'Given no releases should be ignored' {
+        $ignoreReleases = @()
+
+        It 'should return true for a given release' {
+            $val = Assert-ReleaseShouldBeConsidered "someTag" $ignoreReleases
+            $val | Should -Be $true
+        }
+    }
+    Context 'Given one releases should be ignored' {
+        $ignoreReleases = @("releaseToIgnore")
+
+        It 'should return false for a the ignored release' {
+            $val = Assert-ReleaseShouldBeConsidered "releaseToIgnore" $ignoreReleases
+            $val | Should -Be $false
+        }
+
+        It 'should return true for another release' {
+            $val = Assert-ReleaseShouldBeConsidered "someTag" $ignoreReleases
+            $val | Should -Be $true
+        }
+    }
+    Context 'Given two releases should be ignored' {
+        $ignoreReleases = @("releaseToIgnore", "anotherReleaseToIgnore")
+
+        It 'should return false for an ignored release' {
+            $val = Assert-ReleaseShouldBeConsidered "anotherReleaseToIgnore" $ignoreReleases
+            $val | Should -Be $false
+        }
+
+        It 'should return true for another release' {
+            $val = Assert-ReleaseShouldBeConsidered "someTag" $ignoreReleases
+            $val | Should -Be $true
+        }
+    }
+}
+
+Describe 'Get-Releases' {
+    Context 'When run outside a git repo' {
+        Mock git { $Global:LastExitCode = 128 }
+
+        It 'should warn the user and exit' {
+            { Get-Releases 'releaseTagPattern' 'fixtagPattern' } | Should -Throw
+        }
+
+        $Global:LastExitCode = 0
+    }
+    Context 'Given no releases' {
+        Mock git { return $null }
+
+        It 'should return an empty list of releases' {
+            $releases = Get-Releases 'releaseTagPattern' 'fixtagPattern'
+            $releases.Count | Should -Be 0
+        }
+    }
+    Context 'Given one release' {
+        Mock git { return ("releases/5.0.3.1680,2019-06-11 12:11:25 +0100,refs/tags/releases/5.0.3.1680,")}
+        $expectedDate = [DateTime]::ParseExact("2019-06-11 12:11:25 +0100", "yyyy-MM-dd HH:mm:ss zzz", $null);
+
+        It 'should return a single release' {
+            $releases = Get-Releases 'releaseTagPattern' 'fixtagPattern'
+            $releases.Tag | Should -Be "releases/5.0.3.1680"
+            $releases.Date | Should -Be $expectedDate
+            $releases.IsFix | Should -Be $false
+        }
+    }
+    Context 'Given a hotfix release' {
+        Mock git { return ("releases/5.0.3.1680/fix,2019-06-11 12:11:25 +0100,refs/tags/releases/5.0.3.1680/fixx,")}
+        $expectedDate = [DateTime]::ParseExact("2019-06-11 12:11:25 +0100", "yyyy-MM-dd HH:mm:ss zzz", $null);
+
+        It 'should return a single hotfix release' {
+            $releases = Get-Releases 'releaseTagPattern' 'releases/**/fix'
+            $releases.Tag | Should -Be "releases/5.0.3.1680/fix"
+            $releases.Date | Should -Be $expectedDate
+            $releases.IsFix | Should -Be $true
+        }
+    }
+    Context 'Given two releases' {
+        Mock git { return (
+            "releases/5.0.3.1680,2019-06-11 12:11:25 +0100,refs/tags/releases/5.0.3.1680,",
+            "releases/5.0.2.1664,2019-06-03 10:34:37 +0100,refs/tags/releases/5.0.2.1664,")}
+        $firstExpectedDate = [DateTime]::ParseExact("2019-06-11 12:11:25 +0100", "yyyy-MM-dd HH:mm:ss zzz", $null);
+        $secondExpectedDate = [DateTime]::ParseExact("2019-06-03 10:34:37 +0100", "yyyy-MM-dd HH:mm:ss zzz", $null);
+
+        It 'should return a two releases, with the newest release first' {
+            $releases = Get-Releases 'releaseTagPattern' 'fixtagPattern'
+            $releases.Count | Should -Be 2
+            $releases[0].Tag | Should -Be "releases/5.0.3.1680"
+            $releases[0].Date | Should -Be $firstExpectedDate
+            $releases[0].IsFix | Should -Be $false
+            $releases[1].Tag | Should -Be "releases/5.0.2.1664"
+            $releases[1].Date | Should -Be $secondExpectedDate
+            $releases[1].IsFix | Should -Be $false
+        }
+    }
+}
