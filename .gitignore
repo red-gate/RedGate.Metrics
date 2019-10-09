@@ -1,0 +1,5 @@
+.build/packages
+.build/paket-files
+.build/paket.lock
+.build/paket.exe
+.output
