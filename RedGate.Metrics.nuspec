@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<package xmlns="http://schemas.microsoft.com/packaging/2011/08/nuspec.xsd">
+  <metadata>
+    <id>RedGate.Metrics</id>
+    <version>0.1.0</version>
+    <title />
+    <authors>Red Gate Software Ltd</authors>
+    <owners>Red Gate Software Ltd</owners>
+    <requireLicenseAcceptance>false</requireLicenseAcceptance>
+    <description>A PowerShell module to generate metrics.</description>
+    <projectUrl>https://github.com/red-gate/RedGate.Metrics</projectUrl>
+    <copyright>Copyright 2016 Red Gate Software Ltd.</copyright>
+    <dependencies />
+  </metadata>
+  <files>
+    <file src="Public\**\*" target="tools\Public" />
+    <file src="RedGate.Metrics.psm1" target="tools" />
+  </files>
+</package>
