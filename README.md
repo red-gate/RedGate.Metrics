@@ -26,7 +26,7 @@ There's a helper method available to create a simple report for a single-product
 
 `Invoke-FourKeyMetricsReportGeneration`
 
-This is loosely-coupled to Redgate's Octopus Deploy server for publishing. Disable the `Publish-FourKeyMetricsReport` stage if you want to avoid this dependency.
+The `Publish-FourKeyMetricsReport` method is specific to Redgate's infrastructure, but is optional and easily skipped by not providing suitable credentials.
 
 ### Complex Report Generation
 When reporting on the combination of multiple products, we need to do a little more work:
