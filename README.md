@@ -16,11 +16,13 @@ If you'd like to know more, see our blog at [ingeniouslysimple.com](https://medi
 We use the historical data stored in our `git` repositories to provide sufficiently-accurate measures for these metrics.
 
 ## Requirements
-This code should run with any vanilla version of `PowerShell`.
+This code should run with any recent version of `PowerShell` or `PowerShell Core`. This should include running on non-Windows hosts.
+
+You'll need the `git` commandline tools available, and the repository/s you want to analyse.
 
 ## Usage
 ### Simple Report Generation
-There's a helper method avaialble to create a simple report for a single-product repository:
+There's a helper method available to create a simple report for a single-product repository:
 
 `Invoke-FourKeyMetricsReportGeneration`
 
