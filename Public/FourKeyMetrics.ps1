@@ -309,7 +309,7 @@ function global:Invoke-FourKeyMetricsReportGeneration {
         # Optional. Filters commits to a particular set of sub directories for the product we are interested in
         [string[]] $RepoSubDirs = (""),
         # Optional. A start date to filter tags.  Only tags after this date will be used.
-        [datetime] $StartDate,
+        [datetime] $StartDate = "01/01/2018",
         # Optional. How many months back to report on
         [int] $LookbackMonths = 12,
         # Optional. The size (in days) of the rolling window used for metric averaging
