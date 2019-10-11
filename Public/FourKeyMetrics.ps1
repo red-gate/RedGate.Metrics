@@ -303,10 +303,8 @@ function global:Invoke-FourKeyMetricsReportGeneration {
         [Parameter(Mandatory=$true)]
         [string] $FixTagPattern,
         # Name for the report package we will deploy to Octopus
-        [Parameter(Mandatory=$true)]
         [string] $ReportPackageName,
         # Version number to publish the report under
-        [Parameter(Mandatory=$true)]
         [string] $ReportVersionNumber,
         # Optional. Filters commits to a particular set of sub directories for the product we are interested in
         [string[]] $RepoSubDirs = (""),
@@ -341,9 +339,19 @@ function global:Invoke-FourKeyMetricsReportGeneration {
 
     $reportFile = New-FourKeyMetricsReport -metrics $averageReleaseMetrics -productName $ProductName -outFilePath $OutFilePath -windowSize "$windowSizeDays day"
 
-    Publish-FourKeyMetricsReport -reportFile $reportFile -packageName $ReportPackageName -octopusFeedApiKey $OctopusFeedApiKey -versionNumber $ReportVersionNumber
+    if (PublishCredentialsProvided($OctopusFeedApiKey, $ReportPackageName, $ReportVersionNumber)) {
+        Publish-FourKeyMetricsReport -reportFile $reportFile -packageName $ReportPackageName -octopusFeedApiKey $OctopusFeedApiKey -versionNumber $ReportVersionNumber
+    }
 
     return $reportFile
+}
+
+function PublishCredentialsProvided($OctopusFeedApiKey, $ReportPackageName, $ReportVersionNumber)
+{
+    if ($ReportPackageName -eq '' -Or $OctopusFeedApiKey -eq '' -Or $ReportVersionNumber -eq '') {
+        Write-Warning "Publish credentials not provided - skipping publish step"
+        $false
+    } else { $true }
 }
 
 <#
