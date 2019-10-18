@@ -42,7 +42,7 @@
           );
           chart.draw(dataView, {
             title: data.getColumnLabel(colIndex),
-            vAxis: { title: vAxisTitle, format, minValue: 0 },
+            vAxis: { title: vAxisTitle, format, minValue: 0, maxValue: 1 },
             legend: { position: "none" },
             series: [{ color }],
             chartArea: { width: "80%", height: "80%" },
