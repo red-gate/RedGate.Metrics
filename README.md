@@ -77,6 +77,6 @@ For simplicity, the following convention is recommended:
 
 ## Developer Information
 
-Tests can be run by executing `FourKeyMetrics.Tests.ps1`. This will requirw `Pester`.
+Tests can be run by executing `FourKeyMetrics.Tests.ps1`. This will require `Pester`.
 
 This code wasn't test-driven, so coverage is patchy. All future work should be test-driven, including refactoring and bug-fixing.
