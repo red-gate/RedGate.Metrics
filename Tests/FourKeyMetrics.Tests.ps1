@@ -148,7 +148,7 @@ Describe 'Get-AverageReleaseMetrics' {
         $metrics = Get-AverageReleaseMetrics $releases -lookbackMonths 1 -windowSizeDays 14 -windowIntervalDays 7 | Sort-Object -Property EndDate -Descending
 
         It 'should provide results for windows going back for a month at 7 day intervals starting at the current date' {
-            $metrics | %{ $_.EndDate } | Should -Be @(
+            $metrics | ForEach-Object { $_.EndDate } | Should -Be @(
                 [DateTime]"2019-06-07", #24-May to 7-Jun
                 [DateTime]"2019-05-31", #17-May to 31-May
                 [DateTime]"2019-05-24", #10-May to 24-May
@@ -157,11 +157,11 @@ Describe 'Get-AverageReleaseMetrics' {
         }
 
         It 'should provide averages looking back over the 14 day window' {
-            $metrics | %{ $_.Releases }                | Should -Be @(2,     3,    3,    1,    0    )
-            $metrics | %{ $_.DeploymentFrequencyDays } | Should -Be @(6.5,   5,    17,   42,   $null)
-            $metrics | %{ $_.LeadTimeDays }            | Should -Be @(3,     2,    8,    20,   $null)
-            $metrics | %{ $_.FailRate }                | Should -Be @(0,    (1/3),(1/3), 0,    $null)
-            $metrics | %{ $_.MttrHours }               | Should -Be @($null, 24,   24,  $null, $null)
+            $metrics | ForEach-Object { $_.Releases }                | Should -Be @(2,     3,    3,    1,    0    )
+            $metrics | ForEach-Object { $_.DeploymentFrequencyDays } | Should -Be @(6.5,   5,    17,   42,   $null)
+            $metrics | ForEach-Object { $_.LeadTimeDays }            | Should -Be @(3,     2,    8,    20,   $null)
+            $metrics | ForEach-Object { $_.FailRate }                | Should -Be @(0,    (1/3),(1/3), 0,    $null)
+            $metrics | ForEach-Object { $_.MttrHours }               | Should -Be @($null, 24,   24,  $null, $null)
         }
     }
 }
