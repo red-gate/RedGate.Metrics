@@ -262,3 +262,26 @@ Describe 'Get-Releases' {
         }
     }
 }
+
+Describe 'ValueOrNull' {
+    Context 'Given a value' {
+        It 'should return that value' {
+            ValueOrNull(5) | Should -Be 5
+        }
+    }
+    Context 'Given the string "null"' {
+        It 'should return that string' {
+            ValueOrNull('null') | Should -Be 'null'
+        }
+    }
+    Context 'Given an empty string' {
+        It 'should return the empty string'{
+            ValueOrNull('') | Should -Be ''
+        }
+    }
+    Context 'Given $null' {
+        It 'should return the string "null"' {
+            ValueOrNull($null) | Should -Be "null"
+        }
+    }
+}
