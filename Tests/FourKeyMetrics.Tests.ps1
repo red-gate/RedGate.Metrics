@@ -221,6 +221,13 @@ Describe 'Get-Releases' {
             $releases.Count | Should -Be 0
         }
     }
+    Context 'Given a lightweight tag' {
+        Mock git { return ",,refs/tags/lightweight-tag"}
+        It 'should ignore that tag' {
+            $releases = Get-Releases 'releaseTagPattern' 'fixTagPattern'
+            $releases.Count | Should -Be 0
+        }
+    }
     Context 'Given one release' {
         Mock git { return ("releases/5.0.3.1680,2019-06-11 12:11:25 +0100,refs/tags/releases/5.0.3.1680,")}
         $expectedDate = [DateTime]::ParseExact("2019-06-11 12:11:25 +0100", "yyyy-MM-dd HH:mm:ss zzz", $null);
