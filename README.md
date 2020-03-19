@@ -57,7 +57,7 @@ Given a list of tagged releases:
 ### Mean Time to Restore (MTTR)
 Given a list of tagged releases:
 * Identify the number of failed releases
-* For each failed release, calculate how long it was the latest release (until a "fix release" was issued) - the time to restore for each failure
+* For each failed release, calculate how long it was until a "fix release" was issued (the time to restore for each failure)
 * Present the mean average of those times to restore
 
 ## What is a "fix release"?
