@@ -52,7 +52,7 @@ NB: This excludes merge commits, but otherwise includes all commits included in 
 
 ### Change Fail Percentage
 Given a list of tagged releases:
-* Present the percentage of releases that were followed by a "fix release"
+* Present the percentage of releases that were followed by a "fix release" (see *What is a "fix release"?*, below)
 
 ### Mean Time to Restore (MTTR)
 Given a list of tagged releases:
