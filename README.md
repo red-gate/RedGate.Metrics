@@ -35,6 +35,29 @@ When reporting on the combination of multiple products, we need to do a little m
 * Calculate average metrics for that single list using `Get-AverageReleaseMetrics`
 * Create an HTML report using `New-FourKeyMetricsReport`
 
+## How are they calculated?
+### Deployment Frequency
+Given a list of releases:
+* Calculate the time period passed between releases being made
+* Present the mean average of those release intervals
+
+### Delivery Lead Time
+Given a list of releases:
+* Get all new commits included in each release
+* Calculate the time between each commit and the time of release (the Delivery Lead Time of each individual commit)
+* Find the median one and treat it as the average Delivery Lead Time for that release
+* Present the mean average of all release Delivery Lead Times
+
+### Change Fail Percentage
+Given a list of releases:
+* Present the percentage of releases that were followed by a "fix release"
+
+### Mean Time to Restore (MTTR)
+Given a list of releases:
+* Identify the number of failed releases
+* For each failed release, calculate how long it was the latest release (until a "fix release" was issued) - the time to restore for each failure
+* Present the mean average of those times to restore
+
 ## What is a "fix release"?
 
 A fix release is a release whose primary purpose is to correct a serious bug or issue encountered in production. We assume this issue was introduced in the previous release to production.
