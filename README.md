@@ -58,7 +58,7 @@ Given a list of tagged releases:
 Given a list of tagged releases:
 * Identify the number of failed releases
 * For each failed release, calculate how long it was until a "fix release" was issued (the time to restore for each failure)
-* Present the mean average of those times to restore
+* Present the mean of those times to restore
 
 ## What is a "fix release"?
 
