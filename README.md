@@ -48,6 +48,8 @@ Given a list of tagged releases:
 * Find the median one and treat it as the average Delivery Lead Time for that release
 * Present the mean average of all release Delivery Lead Times
 
+NB: This excludes merge commits, but otherwise includes all commits included in the release (including time those commits may have existed on branches, prior to being merged into the release branch).
+
 ### Change Fail Percentage
 Given a list of tagged releases:
 * Present the percentage of releases that were followed by a "fix release"
