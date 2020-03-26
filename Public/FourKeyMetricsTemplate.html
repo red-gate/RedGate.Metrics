@@ -38,10 +38,9 @@
           var dataView = new google.visualization.DataView(data);
           dataView.setColumns([0, colIndex]);
           var chart = new google.visualization.LineChart(
-            document.getElementById(elementId)
+            document.getElementById(elementId).getElementsByClassName("content")[0]
           );
           chart.draw(dataView, {
-            title: data.getColumnLabel(colIndex),
             vAxis: { title: vAxisTitle, format, minValue: 0, maxValue: 1 },
             legend: { position: "none" },
             series: [{ color }],
@@ -56,44 +55,83 @@
     </script>
     <style>
       body {
-        font-family: Arial, Helvetica, sans-serif;
+        font-family: Roboto, Arial, Helvetica, sans-serif;
       }
-      .grid-container {
+
+      .container {
         display: grid;
         grid-template-columns: 1fr 1fr;
         grid-template-rows: min-content 1fr 1fr;
-        grid-template-areas: "title title" "deploy-freq lead-time" "fail-rate mttr";
+        grid-template-areas: "title title" 
+                             "topleft topright"
+                             "bottomleft bottomright";
         height: 100%;
       }
-  
-      #Title {
+
+      .chart {
+        display: grid;
+        grid-template-columns: 1fr;
+        grid-template-rows: min-content 1fr;
+        grid-template-areas: "title" "content";
+        height: 100%;
+      }
+
+      .content {
+        grid-area: content;
+      }
+
+      .title {
         grid-area: title;
         text-align: center;
       }
-  
-      #deploy-freq {
-        grid-area: deploy-freq;
+
+      .chart .title {
+        margin: 3em 0 0 0;
+        font-weight: medium;
       }
-  
+
+      #deploy-freq {
+        grid-area: topleft;
+      }
+
       #lead-time {
-        grid-area: lead-time;
+        grid-area: topright;
       }
   
       #fail-rate {
-        grid-area: fail-rate;
+        grid-area: bottomleft;
       }
+
+      #mttr {
+        grid-area: bottomright;
+      }
+
     </style>
   </head>
+
   <body>
-    <div class="grid-container">
-      <div id="Title">
+    <div class="container">
+      <div class="title">
         <h1>Four Key Metrics for REPLACEREPO</h1>
         <p>(averaged over REPLACEWINDOWSIZE rolling window)</p>
       </div>
-      <div id="deploy-freq"></div>
-      <div id="lead-time"></div>
-      <div id="fail-rate"></div>
-      <div id="mttr"></div>
+
+      <div id="deploy-freq" class="chart">
+        <div class="title">Deployment Frequency</div>        
+        <div class="content"></div>
+      </div>
+      <div id="lead-time" class="chart">
+        <div class="title">Lead Time</div>
+        <div class="content"></div>
+      </div>      
+      <div id="fail-rate" class="chart">
+        <div class="title">Change Failure Rate</div>
+        <div class="content"></div>
+      </div>
+      <div id="mttr" class="chart">
+        <div class="title">Mean Time To Recovery</div>
+        <div class="content"></div>
+      </div>
     </div>
   </body>
   
