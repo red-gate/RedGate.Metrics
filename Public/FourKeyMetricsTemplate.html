@@ -76,9 +76,10 @@
       .chart {
         display: grid;
         grid-template-columns: 1fr;
-        grid-template-rows: 1fr min-content;
-        grid-template-areas: "content" "title";
+        grid-template-rows: 1fr min-content min-content;
+        grid-template-areas: "content" "title" "description";
         height: 100%;
+        text-align: center;
       }
 
       .content {
@@ -91,8 +92,14 @@
       }
 
       .chart .title {
-        margin: 1em 0 2em 0;
+        margin: 0.3em 0;
         font-weight: bold;
+      }
+
+      .description {
+        grid-area: description;
+        margin: 0;
+        color: #aaaaaa;
       }
 
       #deploy-freq {
@@ -118,27 +125,36 @@
     <div class="grid">
       <div class="title">
         <h1>Four Key Metrics for REPLACEREPO</h1>
-        <p>(averaged over REPLACEWINDOWSIZE rolling window)</p>
       </div>
 
       <div id="deploy-freq" class="chart">
-        <div class="title">Deployment Frequency</div>        
-        <div class="content"></div>
+        <div class="title">Deployment Frequency</div>
+        <div class="description">Each point in this chart shows the <em>mean</em> interval between releases over the preceding REPLACEWINDOWSIZE.</div>
+        <div class="content"><!-- Placeholder that will be populated by the Google charts javascript --></div>
       </div>
 
       <div id="lead-time" class="chart">
         <div class="title">Lead Time</div>
-        <div class="content"></div>
+        <div class="description">Each point in this chart shows the <em>mean</em> time taken for commits to be released to production over the preceding REPLACEWINDOWSIZE.</div>
+        <div class="content"><!-- Placeholder that will be populated by the Google charts javascript --></div>
       </div>
       
       <div id="fail-rate" class="chart">
         <div class="title">Change Failure Rate</div>
-        <div class="content"></div>
+        <div class="description">
+          Each point in this chart shows the percentage of releases made over the preceding REPLACEWINDOWSIZE that were considered failed releases.<br>
+          A failed release is a new release that stops people using the product for its intended purpose.
+        </div>
+        <div class="content"><!-- Placeholder that will be populated by the Google charts javascript --></div>
       </div>
 
       <div id="mttr" class="chart">
         <div class="title">Mean Time To Recovery</div>
-        <div class="content"></div>
+        <div class="description">
+          Each point in this chart shows the <em>mean</em> time taken for a fix release to be issued after a failed release over the preceding REPLACEWINDOWSIZE.<br>
+          <b>Note:</b> If there were no failed releases in a time period then there will be no data point for that period.
+        </div>
+        <div class="content"><!-- Placeholder that will be populated by the Google charts javascript --></div>
       </div>      
     </div>
   </body>
