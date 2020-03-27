@@ -1,4 +1,6 @@
-<head>
+<!DOCTYPE html>
+<html>
+  <head>
     <script
       type="text/javascript"
       src="https://www.gstatic.com/charts/loader.js"
@@ -54,25 +56,28 @@
       }
     </script>
     <style>
-      body {
+      html, body { 
+        margin: 0;
+        padding: 0;
+        height: 100vh;
         font-family: Roboto, Arial, Helvetica, sans-serif;
       }
 
-      .container {
+      .grid {        
         display: grid;
         grid-template-columns: 1fr 1fr;
         grid-template-rows: min-content 1fr 1fr;
         grid-template-areas: "title title" 
-                             "topleft topright"
-                             "bottomleft bottomright";
-        height: 100%;
+                            "topleft topright"
+                            "bottomleft bottomright";
+        height: 99vh;
       }
 
       .chart {
         display: grid;
         grid-template-columns: 1fr;
-        grid-template-rows: min-content 1fr;
-        grid-template-areas: "title" "content";
+        grid-template-rows: 1fr min-content;
+        grid-template-areas: "content" "title";
         height: 100%;
       }
 
@@ -86,8 +91,8 @@
       }
 
       .chart .title {
-        margin: 3em 0 0 0;
-        font-weight: medium;
+        margin: 1em 0 2em 0;
+        font-weight: bold;
       }
 
       #deploy-freq {
@@ -110,7 +115,7 @@
   </head>
 
   <body>
-    <div class="container">
+    <div class="grid">
       <div class="title">
         <h1>Four Key Metrics for REPLACEREPO</h1>
         <p>(averaged over REPLACEWINDOWSIZE rolling window)</p>
@@ -120,18 +125,21 @@
         <div class="title">Deployment Frequency</div>        
         <div class="content"></div>
       </div>
+
       <div id="lead-time" class="chart">
         <div class="title">Lead Time</div>
         <div class="content"></div>
-      </div>      
+      </div>
+      
       <div id="fail-rate" class="chart">
         <div class="title">Change Failure Rate</div>
         <div class="content"></div>
       </div>
+
       <div id="mttr" class="chart">
         <div class="title">Mean Time To Recovery</div>
         <div class="content"></div>
-      </div>
+      </div>      
     </div>
   </body>
-  
+</html>
