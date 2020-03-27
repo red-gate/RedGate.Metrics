@@ -1,4 +1,7 @@
-<head>
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8"/>
     <script
       type="text/javascript"
       src="https://www.gstatic.com/charts/loader.js"
@@ -38,10 +41,9 @@
           var dataView = new google.visualization.DataView(data);
           dataView.setColumns([0, colIndex]);
           var chart = new google.visualization.LineChart(
-            document.getElementById(elementId)
+            document.getElementById(elementId).getElementsByClassName("content")[0]
           );
           chart.draw(dataView, {
-            title: data.getColumnLabel(colIndex),
             vAxis: { title: vAxisTitle, format, minValue: 0, maxValue: 1 },
             legend: { position: "none" },
             series: [{ color }],
@@ -55,45 +57,101 @@
       }
     </script>
     <style>
-      body {
-        font-family: Arial, Helvetica, sans-serif;
+      html, body { 
+        margin: 0;
+        padding: 0;
+        height: 100vh;
+        font-family: Roboto, Arial, Helvetica, sans-serif;
       }
-      .grid-container {
+
+      .grid {        
         display: grid;
         grid-template-columns: 1fr 1fr;
         grid-template-rows: min-content 1fr 1fr;
-        grid-template-areas: "title title" "deploy-freq lead-time" "fail-rate mttr";
-        height: 100%;
+        grid-template-areas: "title title" 
+                            "topleft topright"
+                            "bottomleft bottomright";
+        height: 99vh;
       }
-  
-      #Title {
-        grid-area: title;
+
+      .chart {
+        display: grid;
+        grid-template-columns: 1fr;
+        grid-template-rows: 1fr min-content min-content;
+        grid-template-areas: "content" "title" "description";
+        height: 100%;
         text-align: center;
       }
-  
-      #deploy-freq {
-        grid-area: deploy-freq;
+
+      .content {
+        grid-area: content;
       }
-  
+
+      .title {
+        grid-area: title;
+        text-align: center;
+        margin: 0.3em 0;
+        font-weight: bold;
+      }
+
+      .description {
+        grid-area: description;
+        margin: 0;
+        color: #aaaaaa;
+      }
+
+      #deploy-freq {
+        grid-area: topleft;
+      }
+
       #lead-time {
-        grid-area: lead-time;
+        grid-area: topright;
       }
   
       #fail-rate {
-        grid-area: fail-rate;
+        grid-area: bottomleft;
       }
+
+      #mttr {
+        grid-area: bottomright;
+      }
+
     </style>
   </head>
+
   <body>
-    <div class="grid-container">
-      <div id="Title">
-        <h1>Four Key Metrics for REPLACEREPO</h1>
-        <p>(averaged over REPLACEWINDOWSIZE rolling window)</p>
+    <div class="grid">
+      <h1 class="title">Four Key Metrics for REPLACEREPO</h1>
+
+      <div id="deploy-freq" class="chart">
+        <div class="title">Deployment Frequency</div>
+        <div class="description">Each point in this chart shows the <em>mean</em> interval between releases over the preceding REPLACEWINDOWSIZE.</div>
+        <div class="content"><!-- Placeholder that will be populated by the Google charts javascript --></div>
       </div>
-      <div id="deploy-freq"></div>
-      <div id="lead-time"></div>
-      <div id="fail-rate"></div>
-      <div id="mttr"></div>
+
+      <div id="lead-time" class="chart">
+        <div class="title">Lead Time</div>
+        <div class="description">Each point in this chart shows the <em>mean</em> time taken for commits to be released to production over the preceding REPLACEWINDOWSIZE.</div>
+        <div class="content"><!-- Placeholder that will be populated by the Google charts javascript --></div>
+      </div>
+      
+      <div id="fail-rate" class="chart">
+        <div class="title">Change Failure Rate</div>
+        <div class="description">
+          Each point in this chart shows the percentage of releases made over the preceding REPLACEWINDOWSIZE that were considered failed releases.<br>
+          A failed release is a new release that stops people using the product for its intended purpose.
+        </div>
+        <div class="content"><!-- Placeholder that will be populated by the Google charts javascript --></div>
+      </div>
+
+      <div id="mttr" class="chart">
+        <div class="title">Mean Time To Recovery</div>
+        <div class="description">
+          Each point in this chart shows the <em>mean</em> time taken for a fix release to be issued after a failed release over the preceding REPLACEWINDOWSIZE.<br>
+          <b>Note:</b> If there were no failed releases in a time period then there will be no data point for that period.
+        </div>
+        <div class="content"><!-- Placeholder that will be populated by the Google charts javascript --></div>
+      </div>      
     </div>
   </body>
-  
+</html>

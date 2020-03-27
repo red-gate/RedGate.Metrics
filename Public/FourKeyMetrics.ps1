@@ -337,7 +337,7 @@ function global:Invoke-FourKeyMetricsReportGeneration {
         -windowSizeDays $WindowSizeDays `
         -windowIntervalDays $WindowIntervalDays
 
-    $reportFile = New-FourKeyMetricsReport -metrics $averageReleaseMetrics -productName $ProductName -outFilePath $OutFilePath -windowSize "$windowSizeDays day"
+    $reportFile = New-FourKeyMetricsReport -metrics $averageReleaseMetrics -productName $ProductName -outFilePath $OutFilePath -windowSize "$windowSizeDays days"
 
     if (PublishCredentialsProvided($OctopusFeedApiKey, $ReportPackageName, $ReportVersionNumber)) {
         Publish-FourKeyMetricsReport -reportFile $reportFile -packageName $ReportPackageName -octopusFeedApiKey $OctopusFeedApiKey -versionNumber $ReportVersionNumber
