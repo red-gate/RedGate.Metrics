@@ -1,7 +1,7 @@
 source https://api.nuget.org/v3/index.json
 
 # You'll probably need nuget.exe in order to `nuget restore`, `nuget pack` and `nuget push`
-nuget Nuget.CommandLine ~> 3
+nuget NuGet.CommandLine ~> 5.5
 
 # https://github.com/nightroman/Invoke-Build
 # https://github.com/nightroman/Invoke-Build/wiki/Script-Tutorial
