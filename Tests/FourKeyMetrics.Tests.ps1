@@ -270,6 +270,41 @@ Describe 'Get-Releases' {
     }
 }
 
+Describe 'Get-CommitsBetweenTags' {
+    Context 'Given invalid tags' {
+        Mock git {$Global:LastExitCode = 128}
+        It 'should throw an error' {
+            {Get-CommitsBetweenTags 'releases/1' 'releases/2' '.'} | Should -Throw
+        }
+
+        $Global:LastExitCode = 0
+    }
+
+    Context 'Given 0 commits' {
+        Mock git {return $null}
+        It 'should return nothing' {
+            $commits = Get-CommitsBetweenTags 'releases/1' 'releases/2' '.'
+            $commits | Should -BeNullOrEmpty
+        }
+    }
+
+    Context 'Given 2 commits' {
+        Mock git {return (
+            "b78adbc2f,2020-08-25 09:15:30 +0000",
+            "17d887ea7,2020-08-25 10:54:28 +0100"
+        )}
+
+        It 'should return two parsed commit objects' {
+            $commits = Get-CommitsBetweenTags 'releases/1' 'releases/2' '.'
+            $commits | Should -HaveCount 2
+            $commits[0].SHA | Should -Be "b78adbc2f"
+            $commits[0].Date | Should -Be ([DateTime]::ParseExact("2020-08-25 09:15:30 +0000", "yyyy-MM-dd HH:mm:ss zzz", $null))
+            $commits[1].SHA | Should -Be "17d887ea7"
+            $commits[1].Date | Should -Be ([DateTime]::ParseExact("2020-08-25 10:54:28 +0100", "yyyy-MM-dd HH:mm:ss zzz", $null))
+        }
+    }
+}
+
 Describe 'ValueOrNull' {
     Context 'Given a value' {
         It 'should return that value' {
