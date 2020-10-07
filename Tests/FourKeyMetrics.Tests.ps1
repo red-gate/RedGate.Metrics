@@ -171,7 +171,7 @@ Describe 'Assert-ReleaseShouldBeConsidered' {
         $ignoreReleases = @()
 
         It 'should return true for a given release' {
-            $val = Assert-ReleaseShouldBeConsidered "someTag" $ignoreReleases
+            $val = Assert-ReleaseShouldBeConsidered "refs/tags/someTag" $ignoreReleases
             $val | Should -Be $true
         }
     }
@@ -179,12 +179,12 @@ Describe 'Assert-ReleaseShouldBeConsidered' {
         $ignoreReleases = @("releaseToIgnore")
 
         It 'should return false for a the ignored release' {
-            $val = Assert-ReleaseShouldBeConsidered "releaseToIgnore" $ignoreReleases
+            $val = Assert-ReleaseShouldBeConsidered "refs/tags/releaseToIgnore" $ignoreReleases
             $val | Should -Be $false
         }
 
         It 'should return true for another release' {
-            $val = Assert-ReleaseShouldBeConsidered "someTag" $ignoreReleases
+            $val = Assert-ReleaseShouldBeConsidered "refs/tags/someTag" $ignoreReleases
             $val | Should -Be $true
         }
     }
@@ -192,12 +192,12 @@ Describe 'Assert-ReleaseShouldBeConsidered' {
         $ignoreReleases = @("releaseToIgnore", "anotherReleaseToIgnore")
 
         It 'should return false for an ignored release' {
-            $val = Assert-ReleaseShouldBeConsidered "anotherReleaseToIgnore" $ignoreReleases
+            $val = Assert-ReleaseShouldBeConsidered "refs/tags/anotherReleaseToIgnore" $ignoreReleases
             $val | Should -Be $false
         }
 
         It 'should return true for another release' {
-            $val = Assert-ReleaseShouldBeConsidered "someTag" $ignoreReleases
+            $val = Assert-ReleaseShouldBeConsidered "refs/tags/someTag" $ignoreReleases
             $val | Should -Be $true
         }
     }
@@ -229,43 +229,78 @@ Describe 'Get-Releases' {
         }
     }
     Context 'Given one release' {
-        Mock git { return ("releases/5.0.3.1680,2019-06-11 12:11:25 +0100,refs/tags/releases/5.0.3.1680,")}
+        Mock git { return ("2019-06-11 12:11:25 +0100,refs/tags/releases/5.0.3.1680,")}
         $expectedDate = [DateTime]::ParseExact("2019-06-11 12:11:25 +0100", "yyyy-MM-dd HH:mm:ss zzz", $null);
 
         It 'should return a single release' {
             $releases = Get-Releases 'releaseTagPattern' 'fixtagPattern'
-            $releases.Tag | Should -Be "releases/5.0.3.1680"
+            $releases.TagRef | Should -Be "refs/tags/releases/5.0.3.1680"
             $releases.Date | Should -Be $expectedDate
             $releases.IsFix | Should -Be $false
         }
     }
     Context 'Given a hotfix release' {
-        Mock git { return ("releases/5.0.3.1680/fix,2019-06-11 12:11:25 +0100,refs/tags/releases/5.0.3.1680/fixx,")}
+        Mock git { return ("2019-06-11 12:11:25 +0100,refs/tags/releases/5.0.3.1680/fix")}
         $expectedDate = [DateTime]::ParseExact("2019-06-11 12:11:25 +0100", "yyyy-MM-dd HH:mm:ss zzz", $null);
 
         It 'should return a single hotfix release' {
             $releases = Get-Releases 'releaseTagPattern' 'releases/**/fix'
-            $releases.Tag | Should -Be "releases/5.0.3.1680/fix"
+            $releases.TagRef | Should -Be "refs/tags/releases/5.0.3.1680/fix"
             $releases.Date | Should -Be $expectedDate
             $releases.IsFix | Should -Be $true
         }
     }
     Context 'Given two releases' {
         Mock git { return (
-            "releases/5.0.3.1680,2019-06-11 12:11:25 +0100,refs/tags/releases/5.0.3.1680,",
-            "releases/5.0.2.1664,2019-06-03 10:34:37 +0100,refs/tags/releases/5.0.2.1664,")}
+            "2019-06-11 12:11:25 +0100,refs/tags/releases/5.0.3.1680,",
+            "2019-06-03 10:34:37 +0100,refs/tags/releases/5.0.2.1664,")}
         $firstExpectedDate = [DateTime]::ParseExact("2019-06-11 12:11:25 +0100", "yyyy-MM-dd HH:mm:ss zzz", $null);
         $secondExpectedDate = [DateTime]::ParseExact("2019-06-03 10:34:37 +0100", "yyyy-MM-dd HH:mm:ss zzz", $null);
 
         It 'should return a two releases, with the newest release first' {
             $releases = Get-Releases 'releaseTagPattern' 'fixtagPattern'
             $releases.Count | Should -Be 2
-            $releases[0].Tag | Should -Be "releases/5.0.3.1680"
+            $releases[0].TagRef | Should -Be "refs/tags/releases/5.0.3.1680"
             $releases[0].Date | Should -Be $firstExpectedDate
             $releases[0].IsFix | Should -Be $false
-            $releases[1].Tag | Should -Be "releases/5.0.2.1664"
+            $releases[1].TagRef | Should -Be "refs/tags/releases/5.0.2.1664"
             $releases[1].Date | Should -Be $secondExpectedDate
             $releases[1].IsFix | Should -Be $false
+        }
+    }
+}
+
+Describe 'Get-CommitsBetweenTags' {
+    Context 'Given invalid tags' {
+        Mock git {$Global:LastExitCode = 128}
+        It 'should throw an error' {
+            {Get-CommitsBetweenTags 'releases/1' 'releases/2' '.'} | Should -Throw
+        }
+
+        $Global:LastExitCode = 0
+    }
+
+    Context 'Given 0 commits' {
+        Mock git {return $null}
+        It 'should return nothing' {
+            $commits = Get-CommitsBetweenTags 'releases/1' 'releases/2' '.'
+            $commits | Should -BeNullOrEmpty
+        }
+    }
+
+    Context 'Given 2 commits' {
+        Mock git {return (
+            "b78adbc2f,2020-08-25 09:15:30 +0000",
+            "17d887ea7,2020-08-25 10:54:28 +0100"
+        )}
+
+        It 'should return two parsed commit objects' {
+            $commits = Get-CommitsBetweenTags 'releases/1' 'releases/2' '.'
+            $commits | Should -HaveCount 2
+            $commits[0].SHA | Should -Be "b78adbc2f"
+            $commits[0].Date | Should -Be ([DateTime]::ParseExact("2020-08-25 09:15:30 +0000", "yyyy-MM-dd HH:mm:ss zzz", $null))
+            $commits[1].SHA | Should -Be "17d887ea7"
+            $commits[1].Date | Should -Be ([DateTime]::ParseExact("2020-08-25 10:54:28 +0100", "yyyy-MM-dd HH:mm:ss zzz", $null))
         }
     }
 }

@@ -41,7 +41,7 @@ function Get-AverageMetricsForPeriod($releaseMetrics, $endDate) {
 Identify a list of releases, based on repository data
 #>
 function Get-Releases($releaseTagPattern, $fixTagPattern ) {
-    $rawReleaseTags = (git for-each-ref --sort='-taggerdate' --format='%(tag),%(taggerdate:iso8601),%(refname),' "refs/tags/$releaseTagPattern")
+    $rawReleaseTags = (git for-each-ref --sort='-taggerdate' --format='%(taggerdate:iso8601),%(refname),' "refs/tags/$releaseTagPattern")
 
     if ($LastExitCode -ne 0){
         throw "Unable to analyse analysis root. Is the analysis root a git repository?"
@@ -50,14 +50,14 @@ function Get-Releases($releaseTagPattern, $fixTagPattern ) {
     foreach ($tag in $rawReleaseTags) {
         $split = $tag.Split(",")
         if ($split[0] -eq "") {
-            Write-Warning "Tag $($split[2]) is a light-weight tag and will be ignored"
+            Write-Warning "Tag $($split[1]) is a light-weight tag and will be ignored"
             continue
         }
 
         [PSCustomObject]@{
-            Tag   = $split[0];
-            Date  = [DateTime]::ParseExact($split[1], "yyyy-MM-dd HH:mm:ss zzz", $null);
-            IsFix = ($split[0] -like $fixTagPattern)
+            TagRef   = $split[1];
+            Date  = [DateTime]::ParseExact($split[0], "yyyy-MM-dd HH:mm:ss zzz", $null);
+            IsFix = ($split[1] -like "refs/tags/$fixTagPattern")
         }
     }
 }
@@ -67,7 +67,13 @@ function Get-Releases($releaseTagPattern, $fixTagPattern ) {
 Get a list of all commits added to master between two release tags
 #>
 function Get-CommitsBetweenTags($start, $end, $subDirs) {
-    $rawCommits = git log --pretty=format:"%h,%ai" "$start..$end" --no-merges -- $subDirs
+    $gitCommand = "git log --pretty=format:`"%h,%ai`" `"$start..$end`" --no-merges -- $subDirs"
+    $rawCommits = Invoke-Expression $gitCommand
+
+    if ($LastExitCode -ne 0) {
+        throw "Exit code $LastExitCode returned by: $gitCommand"
+    }
+
     foreach ($commit in $rawCommits) {
         $split = $commit.Split(",")
         [PSCustomObject]@{
@@ -77,8 +83,8 @@ function Get-CommitsBetweenTags($start, $end, $subDirs) {
     }
 }
 
-function Assert-ReleaseShouldBeConsidered($thisReleaseTag, $ignoreReleases) {
-    return !($ignoreReleases | Where-Object {$thisReleaseTag -Like $_})
+function Assert-ReleaseShouldBeConsidered($thisReleaseTagRef, $ignoreReleases) {
+    return !($ignoreReleases | Where-Object {$thisReleaseTagRef -Like "refs/tags/$_"})
 }
 
 <#
@@ -90,8 +96,8 @@ function Get-ReleaseMetrics($releases, $subDirs, $startDate, $ignoreReleases) {
     for ($i = 1; $i -lt $releases.Count; $i++) {
         $lastRelease = $releases[$i]
 
-        if (Assert-ReleaseShouldBeConsidered $ThisRelease.Tag $ignoreReleases) {
-            $commitAges = Get-CommitsBetweenTags $lastRelease.Tag $thisRelease.Tag $subDirs | Foreach-Object -Process { $thisRelease.Date - $_.Date } | Sort-Object
+        if (Assert-ReleaseShouldBeConsidered $ThisRelease.TagRef $ignoreReleases) {
+            $commitAges = Get-CommitsBetweenTags $lastRelease.TagRef $thisRelease.TagRef $subDirs | Foreach-Object -Process { $thisRelease.Date - $_.Date } | Sort-Object
             if ($commitAges.Count -gt 0) {
                 $mid = [Math]::Floor($commitAges.Count / 2)
                 $AverageCommitAge = $commitAges[$mid]
@@ -101,8 +107,8 @@ function Get-ReleaseMetrics($releases, $subDirs, $startDate, $ignoreReleases) {
             }
 
             [PSCustomObject]@{
-                From             = $lastRelease.Tag;
-                To               = $thisRelease.Tag;
+                From             = $lastRelease.TagRef;
+                To               = $thisRelease.TagRef;
                 FromDate         = $lastRelease.Date;
                 ToDate           = $thisRelease.Date;
                 Interval         = $thisRelease.Date - $lastRelease.Date;
@@ -378,9 +384,9 @@ function Measure-LeadTimeData {
     for ($i = 1; $i -lt $releases.Count; $i++) {
         $lastRelease = $releases[$i]
 
-        $commitsInRelease = git log --pretty=format:"%s" --grep="Merge pull request" "$($lastRelease.Tag)..$($thisRelease.Tag)"
+        $commitsInRelease = git log --pretty=format:"%s" --grep="Merge pull request" "$($lastRelease.TagRef)..$($thisRelease.TagRef)"
 
-        $message = "$($LastRelease.Tag) -> $($thisRelease.Tag) Released $($ThisRelease.Date)"
+        $message = "$($LastRelease.TagRef) -> $($thisRelease.TagRef) Released $($ThisRelease.Date)"
         Add-Content LeadTimeData.txt $message
         foreach ($commit in $commitsInRelease){
             Add-Content LeadTimeData.txt $commit
