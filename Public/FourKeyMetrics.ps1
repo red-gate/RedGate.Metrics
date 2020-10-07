@@ -67,7 +67,13 @@ function Get-Releases($releaseTagPattern, $fixTagPattern ) {
 Get a list of all commits added to master between two release tags
 #>
 function Get-CommitsBetweenTags($start, $end, $subDirs) {
-    $rawCommits = git log --pretty=format:"%h,%ai" "$start..$end" --no-merges -- $subDirs
+    $gitCommand = "git log --pretty=format:`"%h,%ai`" `"$start..$end`" --no-merges -- $subDirs"
+    $rawCommits = Invoke-Expression $gitCommand
+
+    if ($LastExitCode -ne 0) {
+        throw "Exit code $LastExitCode returned by: $gitCommand"
+    }
+
     foreach ($commit in $rawCommits) {
         $split = $commit.Split(",")
         [PSCustomObject]@{
