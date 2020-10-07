@@ -229,41 +229,41 @@ Describe 'Get-Releases' {
         }
     }
     Context 'Given one release' {
-        Mock git { return ("releases/5.0.3.1680,2019-06-11 12:11:25 +0100,refs/tags/releases/5.0.3.1680,")}
+        Mock git { return ("2019-06-11 12:11:25 +0100,refs/tags/releases/5.0.3.1680,")}
         $expectedDate = [DateTime]::ParseExact("2019-06-11 12:11:25 +0100", "yyyy-MM-dd HH:mm:ss zzz", $null);
 
         It 'should return a single release' {
             $releases = Get-Releases 'releaseTagPattern' 'fixtagPattern'
-            $releases.Tag | Should -Be "releases/5.0.3.1680"
+            $releases.TagRef | Should -Be "refs/tags/releases/5.0.3.1680"
             $releases.Date | Should -Be $expectedDate
             $releases.IsFix | Should -Be $false
         }
     }
     Context 'Given a hotfix release' {
-        Mock git { return ("releases/5.0.3.1680/fix,2019-06-11 12:11:25 +0100,refs/tags/releases/5.0.3.1680/fixx,")}
+        Mock git { return ("2019-06-11 12:11:25 +0100,refs/tags/releases/5.0.3.1680/fix")}
         $expectedDate = [DateTime]::ParseExact("2019-06-11 12:11:25 +0100", "yyyy-MM-dd HH:mm:ss zzz", $null);
 
         It 'should return a single hotfix release' {
             $releases = Get-Releases 'releaseTagPattern' 'releases/**/fix'
-            $releases.Tag | Should -Be "releases/5.0.3.1680/fix"
+            $releases.TagRef | Should -Be "refs/tags/releases/5.0.3.1680/fix"
             $releases.Date | Should -Be $expectedDate
             $releases.IsFix | Should -Be $true
         }
     }
     Context 'Given two releases' {
         Mock git { return (
-            "releases/5.0.3.1680,2019-06-11 12:11:25 +0100,refs/tags/releases/5.0.3.1680,",
-            "releases/5.0.2.1664,2019-06-03 10:34:37 +0100,refs/tags/releases/5.0.2.1664,")}
+            "2019-06-11 12:11:25 +0100,refs/tags/releases/5.0.3.1680,",
+            "2019-06-03 10:34:37 +0100,refs/tags/releases/5.0.2.1664,")}
         $firstExpectedDate = [DateTime]::ParseExact("2019-06-11 12:11:25 +0100", "yyyy-MM-dd HH:mm:ss zzz", $null);
         $secondExpectedDate = [DateTime]::ParseExact("2019-06-03 10:34:37 +0100", "yyyy-MM-dd HH:mm:ss zzz", $null);
 
         It 'should return a two releases, with the newest release first' {
             $releases = Get-Releases 'releaseTagPattern' 'fixtagPattern'
             $releases.Count | Should -Be 2
-            $releases[0].Tag | Should -Be "releases/5.0.3.1680"
+            $releases[0].TagRef | Should -Be "refs/tags/releases/5.0.3.1680"
             $releases[0].Date | Should -Be $firstExpectedDate
             $releases[0].IsFix | Should -Be $false
-            $releases[1].Tag | Should -Be "releases/5.0.2.1664"
+            $releases[1].TagRef | Should -Be "refs/tags/releases/5.0.2.1664"
             $releases[1].Date | Should -Be $secondExpectedDate
             $releases[1].IsFix | Should -Be $false
         }
