@@ -206,12 +206,15 @@ function global:New-FourKeyMetricsReport {
         [Parameter(Mandatory=$true)]
         [string]$windowSize,
         # Optional. Location for the output file to be created at
-        [string]$outFilePath = "."
+        [string]$outFilePath = ".",
+        # Optional. File name for report
+        [string]$outFileName = "index.html"
+        
     )
 
     $reportStartDate = $metrics[0].EndDate
     $reportEndDate = $metrics[-1].EndDate
-    $report = New-Item -Path $outFilePath -Name 'index.html' -Force
+    $report = New-Item -Path $outFilePath -Name $outFileName -Force
     $data = ($metrics | ForEach-Object { ConvertTo-JsonWithJavascript $_ }) -join ",`r`n"
     Get-Content "$PSScriptRoot\FourKeyMetricsTemplate.html" -Raw | 
         ForEach-Object { 
@@ -325,7 +328,9 @@ function global:Invoke-FourKeyMetricsReportGeneration {
         # Optional. Location for report files to be created
         [string] $OutFilePath = ".",
         # Optional. Release/s to exclude from lead time analysis
-        [string[]] $ignoreReleases = @("")
+        [string[]] $ignoreReleases = @(""),
+        # Optional. Custom file name for report
+        [string] $OutFileName = "index.html"
     )
 
     $releaseMetrics = Get-ReleaseMetricsForCheckout `
@@ -343,7 +348,7 @@ function global:Invoke-FourKeyMetricsReportGeneration {
         -windowSizeDays $WindowSizeDays `
         -windowIntervalDays $WindowIntervalDays
 
-    $reportFile = New-FourKeyMetricsReport -metrics $averageReleaseMetrics -productName $ProductName -outFilePath $OutFilePath -windowSize "$windowSizeDays days"
+    $reportFile = New-FourKeyMetricsReport -metrics $averageReleaseMetrics -productName $ProductName -outFilePath $OutFilePath -windowSize "$windowSizeDays days" -OutFileName $outFileName
 
     if (PublishCredentialsProvided($OctopusFeedApiKey, $ReportPackageName, $ReportVersionNumber)) {
         Publish-FourKeyMetricsReport -reportFile $reportFile -packageName $ReportPackageName -octopusFeedApiKey $OctopusFeedApiKey -versionNumber $ReportVersionNumber
