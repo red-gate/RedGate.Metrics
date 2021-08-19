@@ -79,6 +79,14 @@ To analyse a repository successfully, releases must use annotated tags.
 
 Existing lightweight tags can be replaced with annotated tags if necessary.
 
+#### Why require annotated tags?
+
+Some of these metrics care about the specific date/time a release is shipped.
+
+Annotated git tags are complete "tag" objects within git and have their own creation date/time timestamp. For our release tags this should be equal to the release date/time (and can be corrected if it is not). This enables accurate reporting on release date.
+
+A lightweight tag is simply a pointer towards another git object (typically a commit) and does not have its own creation timestamp. The best timestamp a lightweight tag can offer is the timestamp of the object it points at. While there is _often_ a commit made during a release process (bumping version numbers, etc.) that we _could_, we _prefer_ to have a consistent tagging approach with intentional release date/time information recorded.
+
 ### Releases must be identifiable
 We must be able to identify release tags in the repository.
 
