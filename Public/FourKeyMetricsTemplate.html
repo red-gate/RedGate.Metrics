@@ -2,7 +2,7 @@
 <html>
   <head>
     <meta charset="utf-8"/>
-    <title>Four Key Metrics for REPLACEREPO</title>
+    <title>Four Key Metrics for PRODUCTNAME_PLACEHOLDER</title>
     <script
       type="text/javascript"
       src="https://www.gstatic.com/charts/loader.js"
@@ -21,7 +21,7 @@
         data.addColumn("number", "Mean Time to Recovery");
   
         data.addRows([
-          REPLACEME
+          DATA_PLACEHOLDER
           /* e.g.
             ["12 Months", 11.03, 3.67, 0.11, 1.47],
             ["3 Months", 4.64, 1.51, 0.18, 1.47],
@@ -52,7 +52,7 @@
             pointSize: 6,
             trendlines: { 0: { pointSize: 0 }},
             interpolateNulls: true,
-            hAxis: {minValue: REPORTSTARTDATE, maxValue: REPORTENDDATE}
+            hAxis: {minValue: REPORTSTARTDATE_PLACEHOLDER, maxValue: REPORTENDDATE_PLACEHOLDER}
           });
         });
       }
@@ -130,24 +130,24 @@
 
   <body>
     <div class="grid">
-      <h1 class="title">Four Key Metrics for REPLACEREPO</h1>
+      <h1 class="title">Four Key Metrics for PRODUCTNAME_PLACEHOLDER</h1>
 
       <div id="deploy-freq" class="chart">
         <div class="title">Deployment Frequency</div>
-        <div class="description">Each point in this chart shows the <em>mean</em> interval between releases over the preceding REPLACEWINDOWSIZE.</div>
+        <div class="description">Each point in this chart shows the <em>mean</em> interval between releases over the preceding WINDOWSIZE_PLACEHOLDER.</div>
         <div class="content"><!-- Placeholder that will be populated by the Google charts javascript --></div>
       </div>
 
       <div id="lead-time" class="chart">
         <div class="title">Delivery Lead Time</div>
-        <div class="description">Each point in this chart shows the <em>mean</em> time taken for commits to be released to production over the preceding REPLACEWINDOWSIZE.</div>
+        <div class="description">Each point in this chart shows the <em>mean</em> time taken for commits to be released to production over the preceding WINDOWSIZE_PLACEHOLDER.</div>
         <div class="content"><!-- Placeholder that will be populated by the Google charts javascript --></div>
       </div>
       
       <div id="fail-rate" class="chart">
         <div class="title">Change Failure Rate</div>
         <div class="description">
-          Each point in this chart shows the percentage of releases made over the preceding REPLACEWINDOWSIZE that were considered failed releases.<br>
+          Each point in this chart shows the percentage of releases made over the preceding WINDOWSIZE_PLACEHOLDER that were considered failed releases.<br>
           A failed release is a new release that stops people using the product for its intended purpose.
         </div>
         <div class="content"><!-- Placeholder that will be populated by the Google charts javascript --></div>
@@ -156,13 +156,13 @@
       <div id="mttr" class="chart">
         <div class="title">Mean Time To Recovery</div>
         <div class="description">
-          Each point in this chart shows the <em>mean</em> time taken for a fix release to be issued after a failed release over the preceding REPLACEWINDOWSIZE.<br>
+          Each point in this chart shows the <em>mean</em> time taken for a fix release to be issued after a failed release over the preceding WINDOWSIZE_PLACEHOLDER.<br>
           <b>Note:</b> If there were no failed releases in a time period then there will be no data point for that period.
         </div>
         <div class="content"><!-- Placeholder that will be populated by the Google charts javascript --></div>
       </div>      
     </div>
 
-    <div id="footer">Generated on <script>document.write(REPORTSTARTDATE.toLocaleDateString())</script></div>
+    <div id="footer">Generated on <script>document.write(REPORTSTARTDATE_PLACEHOLDER.toLocaleDateString())</script></div>
   </body>
 </html>

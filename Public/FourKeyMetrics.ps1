@@ -218,11 +218,11 @@ function global:New-FourKeyMetricsReport {
     $data = ($metrics | ForEach-Object { ConvertTo-JsonWithJavascript $_ }) -join ",`r`n"
     Get-Content "$PSScriptRoot\FourKeyMetricsTemplate.html" -Raw | 
         ForEach-Object { 
-            $_ -replace "REPLACEME", ($data) `
-               -replace "REPLACEREPO", $productName `
-               -replace "REPLACEWINDOWSIZE", $windowSize `
-               -replace "REPORTSTARTDATE", "new Date($(DateTimeToTimestamp($reportStartDate)))" `
-               -replace "REPORTENDDATE", "new Date($(DateTimeToTimestamp($reportEndDate)))"
+            $_ -replace "DATA_PLACEHOLDER", ($data) `
+               -replace "PRODUCTNAME_PLACEHOLDER", $productName `
+               -replace "WINDOWSIZE_PLACEHOLDER", $windowSize `
+               -replace "REPORTSTARTDATE_PLACEHOLDER", "new Date($(DateTimeToTimestamp($reportStartDate)))" `
+               -replace "REPORTENDDATE_PLACEHOLDER", "new Date($(DateTimeToTimestamp($reportEndDate)))"
         } |
         Out-File $report -Encoding ASCII -Force
     return $report
