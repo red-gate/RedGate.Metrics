@@ -72,14 +72,15 @@
         grid-template-areas: "title title" 
                             "topleft topright"
                             "bottomleft bottomright";
+        grid-gap: 20px;
         height: 99vh;
       }
 
       .chart {
         display: grid;
         grid-template-columns: 1fr;
-        grid-template-rows: 1fr min-content min-content;
-        grid-template-areas: "content" "title" "description";
+        grid-template-rows: min-content min-content 1fr;
+        grid-template-areas: "title" "description" "content";
         height: 100%;
         text-align: center;
       }
