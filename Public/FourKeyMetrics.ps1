@@ -66,8 +66,13 @@ function Get-Releases($releaseTagPattern, $fixTagPattern ) {
 .SYNOPSIS
 Get a list of all commits added to master between two release tags
 #>
-function Get-CommitsBetweenTags($start, $end, $subDirs) {
-    $gitCommand = "git log --pretty=format:`"%h,%ai`" `"$start..$end`" --no-merges -- $subDirs"
+function Get-CommitsBetweenTags($start, $end, $subDirs, $authors) {
+    $authorFilter = ""
+    foreach ($author in $authors) {
+        $authorFilter = $authorFilter + "--author=`"$author`" "
+    }
+
+    $gitCommand = "git log --pretty=format:`"%h,%ai`" `"$start..$end`" --no-merges $authorFilter -- $subDirs"
     $rawCommits = Invoke-Expression $gitCommand
 
     if ($LastExitCode -ne 0) {
@@ -91,19 +96,20 @@ function Assert-ReleaseShouldBeConsidered($thisReleaseTagRef, $ignoreReleases) {
 .SYNOPSIS
 Calculate a set of release metrics for a given set of releases
 #>
-function Get-ReleaseMetrics($releases, $subDirs, $startDate, $ignoreReleases) {
+function Get-ReleaseMetrics($releases, $subDirs, $startDate, $ignoreReleases, $authors) {
     $thisRelease = $releases[0]
     for ($i = 1; $i -lt $releases.Count; $i++) {
         $lastRelease = $releases[$i]
 
-        if (Assert-ReleaseShouldBeConsidered $ThisRelease.TagRef $ignoreReleases) {
-            $commitAges = Get-CommitsBetweenTags $lastRelease.TagRef $thisRelease.TagRef $subDirs | Foreach-Object -Process { $thisRelease.Date - $_.Date } | Sort-Object
+        if (Assert-ReleaseShouldBeConsidered $thisRelease.TagRef $ignoreReleases) {
+            $commitAges = Get-CommitsBetweenTags $lastRelease.TagRef $thisRelease.TagRef $subDirs $authors | Foreach-Object -Process { $thisRelease.Date - $_.Date } | Sort-Object
             if ($commitAges.Count -gt 0) {
                 $mid = [Math]::Floor($commitAges.Count / 2)
                 $AverageCommitAge = $commitAges[$mid]
             }
             else {
                 $AverageCommitAge = $null;
+                Write-Warning "Release $thisRelease.TagRef looks like it has no relevant commits"
             }
 
             [PSCustomObject]@{
@@ -152,12 +158,14 @@ function global:Get-ReleaseMetricsForCheckout {
         # Optional. How many months back to report on
         [int]$lookbackMonths = 12,
         # Optional. Release/s to exclude from lead time analysis
-        [string[]] $ignoreReleases = @("")
+        [string[]] $ignoreReleases = @(""),
+        # Optional.Only consider commits made by specific authors
+        [string[]] $authors = @("")
     )
     Push-Location $checkoutLocation
 
     $releases = Get-Releases $releaseTagPattern $fixTagPattern
-    Get-ReleaseMetrics $releases $repoSubDirs $startDate $ignoreReleases
+    Get-ReleaseMetrics $releases $repoSubDirs $startDate $ignoreReleases $authors
 
     Pop-Location
 }
