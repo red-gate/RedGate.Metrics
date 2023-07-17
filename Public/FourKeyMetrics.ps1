@@ -33,6 +33,14 @@ function Get-AverageMetricsForPeriod($releaseMetrics, $endDate) {
         MttrHours               = $mttrAverage;
         LeadTimeDays            = $leadTimeAverage;
         FailRate                = $failRate;
+        EliteDFDays = 1;
+        HighDFDays = 7;
+        EliteLTDays = 0.042;
+        HighLTDays = 7;
+        EliteCFRPerc = 15;
+        HighCFRPerc = 30;
+        EliteMTTRHours = 1;
+        HighMTTRHours = 24;
     }
 }
 
@@ -229,7 +237,20 @@ function global:New-FourKeyMetricsReport {
 }
 
 function ConvertTo-JsonWithJavascript($period){
-    "[new Date($(DateTimeToTimestamp($period.EndDate))), $(ValueOrNull($period.DeploymentFrequencyDays)), $(ValueOrNull($period.LeadTimeDays)), $(ValueOrNull($period.FailRate)), $(ValueOrNull($period.MttrHours))]"
+    "[new Date($(DateTimeToTimestamp($period.EndDate))), 
+    $(ValueOrNull($period.DeploymentFrequencyDays)), 
+    $(ValueOrNull($period.LeadTimeDays)), 
+    $(ValueOrNull($period.FailRate)), 
+    $(ValueOrNull($period.MttrHours)),
+    $(ValueOrNull($period.EliteDFDays)),
+    $(ValueOrNull($period.HighDFDays)),
+    $(ValueOrNull($period.EliteLTDays)),
+    $(ValueOrNull($period.HighLTDays)),
+    $(ValueOrNull($period.EliteCFRPerc)),
+    $(ValueOrNull($period.HighCFRPerc)),
+    $(ValueOrNull($period.EliteMTTRHours)),
+    $(ValueOrNull($period.HighMTTRHours))
+    ]"
 }
 
 function ValueOrNull($value)

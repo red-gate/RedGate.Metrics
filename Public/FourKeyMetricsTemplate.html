@@ -19,6 +19,14 @@
         data.addColumn("number", "Delivery Lead Time");
         data.addColumn("number", "Change Failure Rate");
         data.addColumn("number", "Mean Time to Recovery");
+        data.addColumn("number", "Elite Deployment Frequency")
+        data.addColumn("number", "High Deployment Frequency")
+        data.addColumn("number", "Elite Lead Time")
+        data.addColumn("number", "High Lead Time")
+        data.addColumn("number", "Elite CFR")
+        data.addColumn("number", "High CFR")
+        data.addColumn("number", "Elite MTTR")
+        data.addColumn("number", "High MTTR")
   
         data.addRows([
           DATA_PLACEHOLDER
@@ -30,24 +38,28 @@
         ]);
   
         const charts = [
-          [1, "deploy-freq", "Days", "#336dc2"],
-          [2, "lead-time", "Days", "#128024"],
-          [3, "fail-rate", "Percent", "#c00", "percent"],
-          [4, "mttr", "Hours", "#fc9003"]
+          [1, "deploy-freq", "Days", "#336dc2", 5, 6],
+          [2, "lead-time", "Days", "#128024", 7, 8],
+          [3, "fail-rate", "Percent", "#c00", 9, 10, "percent"],
+          [4, "mttr", "Hours", "#fc9003", 11, 12]
         ];
   
         charts.forEach(c => {
-          const [colIndex, elementId, vAxisTitle, color, format] = c;
+          const [colIndex, elementId, vAxisTitle, color, elite, high, format] = c;
   
           var dataView = new google.visualization.DataView(data);
-          dataView.setColumns([0, colIndex]);
-          var chart = new google.visualization.LineChart(
+          dataView.setColumns([0, colIndex, elite, high]);
+
+          var chart = new google.visualization.ComboChart(
             document.getElementById(elementId).getElementsByClassName("content")[0]
           );
           chart.draw(dataView, {
             vAxis: { title: vAxisTitle, format, minValue: 0, maxValue: 1 },
             legend: { position: "none" },
-            series: [{ color }],
+            colors: ['#d8e7f9', '#d1eed2', '#ffd699'],
+            seriesType: 'steppedArea',
+            isStacked: true,
+            series: {0: {type: 'line', pointSize: 0, color}},
             chartArea: { width: "80%", height: "80%" },
             pointSize: 6,
             trendlines: { 0: { pointSize: 0 }},
