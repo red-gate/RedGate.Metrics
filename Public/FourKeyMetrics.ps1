@@ -67,12 +67,15 @@ function Get-Releases($releaseTagPattern, $fixTagPattern ) {
 Get a list of all commits added to master between two release tags
 #>
 function Get-CommitsBetweenTags($start, $end, $subDirs, $authors) {
+    # Assume we're not filtering by authors, but build up a filter if we want one
     $authorFilter = ""
     foreach ($author in $authors) {
         $authorFilter = $authorFilter + "--author=`"$author`" "
     }
 
+    # Use the `--author` flag to limit git log returns to our desired authors
     $gitCommand = "git log --pretty=format:`"%h,%ai`" `"$start..$end`" --no-merges $authorFilter -- $subDirs"
+    
     $rawCommits = Invoke-Expression $gitCommand
 
     if ($LastExitCode -ne 0) {
@@ -97,37 +100,36 @@ function Assert-ReleaseShouldBeConsidered($thisReleaseTagRef, $ignoreReleases) {
 Calculate a set of release metrics for a given set of releases
 #>
 function Get-ReleaseMetrics($releases, $subDirs, $startDate, $ignoreReleases, $authors) {
+    # Actually we want to filter out irrelevant releases before reaching this stage - otherwise deplyment frequency (and maybe othe rmetrics) gets scewed
     $thisRelease = $releases[0]
     for ($i = 1; $i -lt $releases.Count; $i++) {
-        $lastRelease = $releases[$i]
+        $previousRelease = $releases[$i]
 
         if (Assert-ReleaseShouldBeConsidered $thisRelease.TagRef $ignoreReleases) {
-            $commitAges = Get-CommitsBetweenTags $lastRelease.TagRef $thisRelease.TagRef $subDirs $authors | Foreach-Object -Process { $thisRelease.Date - $_.Date } | Sort-Object
+            # Add a filter here to only consider commits by relevant authors
+            $commitAges = Get-CommitsBetweenTags $previousRelease.TagRef $thisRelease.TagRef $subDirs $authors | Foreach-Object -Process { $thisRelease.Date - $_.Date } | Sort-Object
+            # Ignore releases with no relevant commits
             if ($commitAges.Count -gt 0) {
                 $mid = [Math]::Floor($commitAges.Count / 2)
                 $AverageCommitAge = $commitAges[$mid]
-            }
-            else {
-                $AverageCommitAge = $null;
-                Write-Warning "Release $thisRelease.TagRef looks like it has no relevant commits"
-            }
+                
+                [PSCustomObject]@{
+                    From             = $previousRelease.TagRef;
+                    To               = $thisRelease.TagRef;
+                    FromDate         = $previousRelease.Date;
+                    ToDate           = $thisRelease.Date;
+                    Interval         = $thisRelease.Date - $previousRelease.Date;
+                    IsFix            = $thisRelease.IsFix;
+                    AverageCommitAge = $AverageCommitAge;
+                }
 
-            [PSCustomObject]@{
-                From             = $lastRelease.TagRef;
-                To               = $thisRelease.TagRef;
-                FromDate         = $lastRelease.Date;
-                ToDate           = $thisRelease.Date;
-                Interval         = $thisRelease.Date - $lastRelease.Date;
-                IsFix            = $thisRelease.IsFix;
-                AverageCommitAge = $AverageCommitAge;
+                $thisRelease = $previousRelease
             }
         }
 
-        if ($lastRelease.Date -le $startDate) {
+        if ($previousRelease.Date -le $startDate) {
             break
         }
-
-        $thisRelease = $lastRelease
     }
 }
 
@@ -159,7 +161,7 @@ function global:Get-ReleaseMetricsForCheckout {
         [int]$lookbackMonths = 12,
         # Optional. Release/s to exclude from lead time analysis
         [string[]] $ignoreReleases = @(""),
-        # Optional.Only consider commits made by specific authors
+        # Optional. Only consider commits made by specific authors
         [string[]] $authors = @("")
     )
     Push-Location $checkoutLocation
@@ -337,6 +339,8 @@ function global:Invoke-FourKeyMetricsReportGeneration {
         [string] $OutFilePath = ".",
         # Optional. Release/s to exclude from lead time analysis
         [string[]] $ignoreReleases = @(""),
+        # Optional. Limit data to only include releases with commits by these people
+        [string[]] $Authors = @(""),
         # Optional. Custom file name for report
         [string] $OutFileName = "index.html"
     )
@@ -348,7 +352,8 @@ function global:Invoke-FourKeyMetricsReportGeneration {
         -startDate $StartDate `
         -repoSubDirs $RepoSubDirs `
         -lookbackMonths $LookbackMonths `
-        -ignoreReleases $ignoreReleases
+        -ignoreReleases $ignoreReleases `
+        -authors $authors
 
     $averageReleaseMetrics = Get-AverageReleaseMetrics `
         -lookbackMonths $LookbackMonths `
