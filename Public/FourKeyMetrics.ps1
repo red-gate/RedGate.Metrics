@@ -110,7 +110,7 @@ function global:Get-ReleaseMetricsForCheckout {
 .SYNOPSIS
 Identify a list of releases, based on repository data
 #>
-function Get-Releases($releaseTagPattern, $fixTagPattern ) {
+function Get-Releases($releaseTagPattern, $fixTagPattern) {
     $gitCommand = "git for-each-ref --sort='-taggerdate' --format='%(taggerdate:iso8601),%(refname),' `"refs/tags/$releaseTagPattern`""
     $rawReleaseTags = Invoke-Expression $gitCommand
 
