@@ -114,7 +114,7 @@ function Get-Releases($releaseTagPattern, $fixTagPattern ) {
     $rawReleaseTags = (git for-each-ref --sort='-taggerdate' --format='%(taggerdate:iso8601),%(refname),' "refs/tags/$releaseTagPattern")
 
     if ($LastExitCode -ne 0){
-        throw "Unable to analyse analysis root. Is the analysis root a git repository?"
+        throw "Unable to get list of release tags. Ensure CheckoutLocation is a git repository?"
     }
 
     foreach ($tag in $rawReleaseTags) {
