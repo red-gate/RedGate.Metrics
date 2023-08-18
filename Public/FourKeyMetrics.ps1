@@ -1,5 +1,76 @@
 <#
 .SYNOPSIS
+Build and publish a new Four Key Metrics report
+
+.DESCRIPTION
+Fascade around Get-FourKeyMetrics, New-FourKetMetricsReport, and Publsh-FourKeyMetricsReport
+
+#>
+function global:Invoke-FourKeyMetricsReportGeneration {
+    [CmdletBinding()]
+    param(
+        # Optional. The API key of the Octopus Deploy server to push packages to. $null means don't publish to Octopus
+        [string] $OctopusFeedApiKey,
+        # The location of the checked out repository to analyse
+        [Parameter(Mandatory=$true)]
+        [string] $CheckoutLocation,
+        # Name of the product we are reporting on (used as a label in reports)
+        [Parameter(Mandatory=$true)]
+        [string] $ProductName,
+        # The pattern for annotated tags in fnmatch format for git log
+        [Parameter(Mandatory=$true)]
+        [string] $ReleaseTagPattern,
+        # The pattern for fix tags - in powershell wild card format
+        [Parameter(Mandatory=$true)]
+        [string] $FixTagPattern,
+        # Name for the report package we will deploy to Octopus
+        [string] $ReportPackageName,
+        # Version number to publish the report under
+        [string] $ReportVersionNumber,
+        # Optional. Filters commits to a particular set of sub directories for the product we are interested in
+        [string[]] $RepoSubDirs = (""),
+        # Optional. A start date to filter tags.  Only tags after this date will be used.
+        [datetime] $StartDate = "01/01/2018",
+        # Optional. How many months back to report on
+        [int] $LookbackMonths = 12,
+        # Optional. The size (in days) of the rolling window used for metric averaging
+        [int] $WindowSizeDays = 30,
+        # Optional. The interval (in days) between each point in the graph
+        [int] $WindowIntervalDays = 7,
+        # Optional. Location for report files to be created
+        [string] $OutFilePath = ".",
+        # Optional. Release/s to exclude from lead time analysis
+        [string[]] $ignoreReleases = @(""),
+        # Optional. Custom file name for report
+        [string] $OutFileName = "index.html"
+    )
+
+    $releaseMetrics = Get-ReleaseMetricsForCheckout `
+        -checkoutLocation $CheckoutLocation `
+        -releaseTagPattern $ReleaseTagPattern `
+        -fixTagPattern $FixTagPattern `
+        -startDate $StartDate `
+        -repoSubDirs $RepoSubDirs `
+        -lookbackMonths $LookbackMonths `
+        -ignoreReleases $ignoreReleases
+
+    $averageReleaseMetrics = Get-AverageReleaseMetrics `
+        -lookbackMonths $LookbackMonths `
+        -releaseMetrics $releaseMetrics `
+        -windowSizeDays $WindowSizeDays `
+        -windowIntervalDays $WindowIntervalDays
+
+    $reportFile = New-FourKeyMetricsReport -metrics $averageReleaseMetrics -productName $ProductName -outFilePath $OutFilePath -windowSize "$windowSizeDays days" -OutFileName $outFileName
+
+    if (PublishCredentialsProvided($OctopusFeedApiKey, $ReportPackageName, $ReportVersionNumber)) {
+        Publish-FourKeyMetricsReport -reportFile $reportFile -packageName $ReportPackageName -octopusFeedApiKey $OctopusFeedApiKey -versionNumber $ReportVersionNumber
+    }
+
+    return $reportFile
+}
+
+<#
+.SYNOPSIS
 Calculate averages for the Four Key Metrics, based on a provided set of releases
 #>
 function Get-AverageMetricsForPeriod($releaseMetrics, $endDate) {
@@ -284,77 +355,6 @@ function global:Publish-FourKeyMetricsReport {
             throw
         }
     }
-}
-
-<#
-.SYNOPSIS
-Build and publish a new Four Key Metrics report
-
-.DESCRIPTION
-Fascade around Get-FourKeyMetrics, New-FourKetMetricsReport, and Publsh-FourKeyMetricsReport
-
-#>
-function global:Invoke-FourKeyMetricsReportGeneration {
-    [CmdletBinding()]
-    param(
-        # Optional. The API key of the Octopus Deploy server to push packages to. $null means don't publish to Octopus
-        [string] $OctopusFeedApiKey,
-        # The location of the checked out repository to analyse
-        [Parameter(Mandatory=$true)]
-        [string] $CheckoutLocation,
-        # Name of the product we are reporting on (used as a label in reports)
-        [Parameter(Mandatory=$true)]
-        [string] $ProductName,
-        # The pattern for annotated tags in fnmatch format for git log
-        [Parameter(Mandatory=$true)]
-        [string] $ReleaseTagPattern,
-        # The pattern for fix tags - in powershell wild card format
-        [Parameter(Mandatory=$true)]
-        [string] $FixTagPattern,
-        # Name for the report package we will deploy to Octopus
-        [string] $ReportPackageName,
-        # Version number to publish the report under
-        [string] $ReportVersionNumber,
-        # Optional. Filters commits to a particular set of sub directories for the product we are interested in
-        [string[]] $RepoSubDirs = (""),
-        # Optional. A start date to filter tags.  Only tags after this date will be used.
-        [datetime] $StartDate = "01/01/2018",
-        # Optional. How many months back to report on
-        [int] $LookbackMonths = 12,
-        # Optional. The size (in days) of the rolling window used for metric averaging
-        [int] $WindowSizeDays = 30,
-        # Optional. The interval (in days) between each point in the graph
-        [int] $WindowIntervalDays = 7,
-        # Optional. Location for report files to be created
-        [string] $OutFilePath = ".",
-        # Optional. Release/s to exclude from lead time analysis
-        [string[]] $ignoreReleases = @(""),
-        # Optional. Custom file name for report
-        [string] $OutFileName = "index.html"
-    )
-
-    $releaseMetrics = Get-ReleaseMetricsForCheckout `
-        -checkoutLocation $CheckoutLocation `
-        -releaseTagPattern $ReleaseTagPattern `
-        -fixTagPattern $FixTagPattern `
-        -startDate $StartDate `
-        -repoSubDirs $RepoSubDirs `
-        -lookbackMonths $LookbackMonths `
-        -ignoreReleases $ignoreReleases
-
-    $averageReleaseMetrics = Get-AverageReleaseMetrics `
-        -lookbackMonths $LookbackMonths `
-        -releaseMetrics $releaseMetrics `
-        -windowSizeDays $WindowSizeDays `
-        -windowIntervalDays $WindowIntervalDays
-
-    $reportFile = New-FourKeyMetricsReport -metrics $averageReleaseMetrics -productName $ProductName -outFilePath $OutFilePath -windowSize "$windowSizeDays days" -OutFileName $outFileName
-
-    if (PublishCredentialsProvided($OctopusFeedApiKey, $ReportPackageName, $ReportVersionNumber)) {
-        Publish-FourKeyMetricsReport -reportFile $reportFile -packageName $ReportPackageName -octopusFeedApiKey $OctopusFeedApiKey -versionNumber $ReportVersionNumber
-    }
-
-    return $reportFile
 }
 
 function PublishCredentialsProvided($OctopusFeedApiKey, $ReportPackageName, $ReportVersionNumber)
