@@ -111,10 +111,11 @@ function global:Get-ReleaseMetricsForCheckout {
 Identify a list of releases, based on repository data
 #>
 function Get-Releases($releaseTagPattern, $fixTagPattern ) {
-    $rawReleaseTags = (git for-each-ref --sort='-taggerdate' --format='%(taggerdate:iso8601),%(refname),' "refs/tags/$releaseTagPattern")
+    $gitCommand = "git for-each-ref --sort='-taggerdate' --format='%(taggerdate:iso8601),%(refname),' `"refs/tags/$releaseTagPattern`""
+    $rawReleaseTags = Invoke-Expression $gitCommand
 
-    if ($LastExitCode -ne 0){
-        throw "Unable to get list of release tags. Ensure CheckoutLocation is a git repository?"
+    if ($LastExitCode -ne 0) {
+        throw "Exit code $LastExitCode returned by: $gitCommand"
     }
 
     foreach ($tag in $rawReleaseTags) {
