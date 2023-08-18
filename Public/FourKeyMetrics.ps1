@@ -71,40 +71,39 @@ function global:Invoke-FourKeyMetricsReportGeneration {
 
 <#
 .SYNOPSIS
-Calculate averages for the Four Key Metrics, based on a provided set of releases
+Calculate the 4 key metrics aka Accelerate metrics for a repo
+
+.DESCRIPTION
+Calculate the 4 key metrics aka Accelerate metrics for a repo
+
 #>
-function Get-AverageMetricsForPeriod($releaseMetrics, $endDate) {
-    $releaseCount = $releaseMetrics.Count
-    $failedReleaseCount = @($releaseMetrics | Where-Object { $_.IsFix }).Count
+function global:Get-ReleaseMetricsForCheckout {
+    [CmdletBinding()]
+    param(
+        # The path to the repo
+        [Parameter(Mandatory=$true)]
+        [string]$checkoutLocation,
+        # The pattern for annotated tags in fnmatch format for git log
+        [Parameter(Mandatory=$true)]
+        [string]$releaseTagPattern,
+        # The pattern for fix tags - in powershell wild card format
+        [Parameter(Mandatory=$true)]
+        [string]$fixTagPattern,
+        # A start date to filter tags.  Only tags after this date will be used.
+        [datetime]$startDate,
+        # Optional, case sensitive. Filters commits to a particular set of sub directories for use in mono-repos
+        [string[]]$repoSubDirs = @(""),
+        # Optional. How many months back to report on
+        [int]$lookbackMonths = 12,
+        # Optional. Release/s to exclude from lead time analysis
+        [string[]] $ignoreReleases = @("")
+    )
+    Push-Location $checkoutLocation
 
-    if ($releaseCount -gt 0){
-        $deploymentFrequencyDays = ($releaseMetrics | ForEach-Object {$_.Interval.TotalDays} | Measure-Object -Average).Average;
-        $failRate = $failedreleaseCount / $releaseCount
-        $leadTimeMeasures = $releaseMetrics | Where-Object {$null -ne $_.AverageCommitAge } | ForEach-Object { $_.AverageCommitAge.TotalDays } | Measure-Object -Average
-        $leadTimeAverage = $leadTimeMeasures.Average;
-    }
-    else {
-        $deploymentFrequencyDays = $null;
-        $failRate = $null;
-        $leadTimeAverage = $null;
-    }
+    $releases = Get-Releases $releaseTagPattern $fixTagPattern
+    Get-ReleaseMetrics $releases $repoSubDirs $startDate $ignoreReleases
 
-    if ($failedreleaseCount -gt 0){
-        $mttrMeasures = $releaseMetrics | Where-Object { $_.IsFix } | ForEach-Object { $_.Interval.TotalHours } | Measure-Object -Average
-        $mttrAverage = $mttrMeasures.Average;
-    }
-    else {
-        $mttrAverage = $null;
-    }
-
-    [PSCustomObject]@{
-        EndDate                 = $endDate
-        Releases                = $releaseCount;
-        DeploymentFrequencyDays = $deploymentFrequencyDays;
-        MttrHours               = $mttrAverage;
-        LeadTimeDays            = $leadTimeAverage;
-        FailRate                = $failRate;
-    }
+    Pop-Location
 }
 
 <#
@@ -131,31 +130,6 @@ function Get-Releases($releaseTagPattern, $fixTagPattern ) {
             IsFix = ($split[1] -like "refs/tags/$fixTagPattern")
         }
     }
-}
-
-<#
-.SYNOPSIS
-Get a list of all commits added to master between two release tags
-#>
-function Get-CommitsBetweenTags($start, $end, $subDirs) {
-    $gitCommand = "git log --pretty=format:`"%h,%ai`" `"$start..$end`" --no-merges -- $subDirs"
-    $rawCommits = Invoke-Expression $gitCommand
-
-    if ($LastExitCode -ne 0) {
-        throw "Exit code $LastExitCode returned by: $gitCommand"
-    }
-
-    foreach ($commit in $rawCommits) {
-        $split = $commit.Split(",")
-        [PSCustomObject]@{
-            SHA  = $split[0];
-            Date = [DateTime]::ParseExact($split[1], "yyyy-MM-dd HH:mm:ss zzz", $null)
-        }
-    }
-}
-
-function Assert-ReleaseShouldBeConsidered($thisReleaseTagRef, $ignoreReleases) {
-    return !($ignoreReleases | Where-Object {$thisReleaseTagRef -Like "refs/tags/$_"})
 }
 
 <#
@@ -196,41 +170,29 @@ function Get-ReleaseMetrics($releases, $subDirs, $startDate, $ignoreReleases) {
     }
 }
 
+function Assert-ReleaseShouldBeConsidered($thisReleaseTagRef, $ignoreReleases) {
+    return !($ignoreReleases | Where-Object {$thisReleaseTagRef -Like "refs/tags/$_"})
+}
+
 <#
 .SYNOPSIS
-Calculate the 4 key metrics aka Accelerate metrics for a repo
-
-.DESCRIPTION
-Calculate the 4 key metrics aka Accelerate metrics for a repo
-
+Get a list of all commits added to master between two release tags
 #>
-function global:Get-ReleaseMetricsForCheckout {
-    [CmdletBinding()]
-    param(
-        # The path to the repo
-        [Parameter(Mandatory=$true)]
-        [string]$checkoutLocation,
-        # The pattern for annotated tags in fnmatch format for git log
-        [Parameter(Mandatory=$true)]
-        [string]$releaseTagPattern,
-        # The pattern for fix tags - in powershell wild card format
-        [Parameter(Mandatory=$true)]
-        [string]$fixTagPattern,
-        # A start date to filter tags.  Only tags after this date will be used.
-        [datetime]$startDate,
-        # Optional, case sensitive. Filters commits to a particular set of sub directories for use in mono-repos
-        [string[]]$repoSubDirs = @(""),
-        # Optional. How many months back to report on
-        [int]$lookbackMonths = 12,
-        # Optional. Release/s to exclude from lead time analysis
-        [string[]] $ignoreReleases = @("")
-    )
-    Push-Location $checkoutLocation
+function Get-CommitsBetweenTags($start, $end, $subDirs) {
+    $gitCommand = "git log --pretty=format:`"%h,%ai`" `"$start..$end`" --no-merges -- $subDirs"
+    $rawCommits = Invoke-Expression $gitCommand
 
-    $releases = Get-Releases $releaseTagPattern $fixTagPattern
-    Get-ReleaseMetrics $releases $repoSubDirs $startDate $ignoreReleases
+    if ($LastExitCode -ne 0) {
+        throw "Exit code $LastExitCode returned by: $gitCommand"
+    }
 
-    Pop-Location
+    foreach ($commit in $rawCommits) {
+        $split = $commit.Split(",")
+        [PSCustomObject]@{
+            SHA  = $split[0];
+            Date = [DateTime]::ParseExact($split[1], "yyyy-MM-dd HH:mm:ss zzz", $null)
+        }
+    }
 }
 
 function global:Get-AverageReleaseMetrics {
@@ -253,6 +215,44 @@ function global:Get-AverageReleaseMetrics {
         $lookbackReleases = @($releaseMetrics | Where-Object { $_.ToDate -ge $startDate -AND $_.ToDate -le $endDate })
 
         Get-AverageMetricsForPeriod $lookbackReleases $endDate
+    }
+}
+
+<#
+.SYNOPSIS
+Calculate averages for the Four Key Metrics, based on a provided set of releases
+#>
+function Get-AverageMetricsForPeriod($releaseMetrics, $endDate) {
+    $releaseCount = $releaseMetrics.Count
+    $failedReleaseCount = @($releaseMetrics | Where-Object { $_.IsFix }).Count
+
+    if ($releaseCount -gt 0){
+        $deploymentFrequencyDays = ($releaseMetrics | ForEach-Object {$_.Interval.TotalDays} | Measure-Object -Average).Average;
+        $failRate = $failedreleaseCount / $releaseCount
+        $leadTimeMeasures = $releaseMetrics | Where-Object {$null -ne $_.AverageCommitAge } | ForEach-Object { $_.AverageCommitAge.TotalDays } | Measure-Object -Average
+        $leadTimeAverage = $leadTimeMeasures.Average;
+    }
+    else {
+        $deploymentFrequencyDays = $null;
+        $failRate = $null;
+        $leadTimeAverage = $null;
+    }
+
+    if ($failedreleaseCount -gt 0){
+        $mttrMeasures = $releaseMetrics | Where-Object { $_.IsFix } | ForEach-Object { $_.Interval.TotalHours } | Measure-Object -Average
+        $mttrAverage = $mttrMeasures.Average;
+    }
+    else {
+        $mttrAverage = $null;
+    }
+
+    [PSCustomObject]@{
+        EndDate                 = $endDate
+        Releases                = $releaseCount;
+        DeploymentFrequencyDays = $deploymentFrequencyDays;
+        MttrHours               = $mttrAverage;
+        LeadTimeDays            = $leadTimeAverage;
+        FailRate                = $failRate;
     }
 }
 
@@ -312,6 +312,14 @@ function DateTimeToTimestamp($datetime){
     [Math]::Floor(1000 * (Get-Date -Date $datetime -UFormat %s))
 }
 
+function PublishCredentialsProvided($OctopusFeedApiKey, $ReportPackageName, $ReportVersionNumber)
+{
+    if ($ReportPackageName -eq '' -Or $OctopusFeedApiKey -eq '' -Or $ReportVersionNumber -eq '') {
+        Write-Warning "Publish credentials not provided - skipping publish step"
+        $false
+    } else { $true }
+}
+
 <#
 .SYNOPSIS
 Creates a zip of the provided HTML report, and optionally uploads it to Octopus Deploy
@@ -355,12 +363,4 @@ function global:Publish-FourKeyMetricsReport {
             throw
         }
     }
-}
-
-function PublishCredentialsProvided($OctopusFeedApiKey, $ReportPackageName, $ReportVersionNumber)
-{
-    if ($ReportPackageName -eq '' -Or $OctopusFeedApiKey -eq '' -Or $ReportVersionNumber -eq '') {
-        Write-Warning "Publish credentials not provided - skipping publish step"
-        $false
-    } else { $true }
 }
