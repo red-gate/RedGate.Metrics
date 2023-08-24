@@ -3,7 +3,7 @@
 Build and publish a new Four Key Metrics report
 
 .DESCRIPTION
-Fascade around Get-ReleaseMetricsForCheckout, Get-AverageReleaseMetrics, New-FourKetMetricsReport, and Publsh-FourKeyMetricsReport
+Facade around Get-ReleaseMetricsForCheckout, Get-AverageReleaseMetrics, New-FourKetMetricsReport, and Publish-FourKeyMetricsReport
 
 #>
 function global:Invoke-FourKeyMetricsReportGeneration {
