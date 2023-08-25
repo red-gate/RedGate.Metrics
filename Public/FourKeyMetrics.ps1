@@ -149,10 +149,10 @@ function global:Get-ReleaseMetrics {
     param(
         [Parameter(Mandatory=$true)]
         [PSCustomObject]$releases,
-        [string]$subDirs,
+        [string[]]$subDirs,
         [Parameter(Mandatory=$true)]
         [string]$startDate,
-        [string]$ignoreReleases
+        [string[]]$ignoreReleases
     )
     $thisRelease = $releases[0]
     for ($i = 1; $i -lt $releases.Count; $i++) {
