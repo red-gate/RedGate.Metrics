@@ -110,7 +110,14 @@ function global:Get-ReleaseMetricsForCheckout {
 .SYNOPSIS
 Identify a list of releases, based on repository data
 #>
-function Get-Releases($releaseTagPattern, $fixTagPattern) {
+function global:Get-Releases {
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory=$true)]
+        [string]$releaseTagPattern,
+        [Parameter(Mandatory=$true)]
+        [string]$fixTagPattern
+    )
     $gitCommand = "git for-each-ref --sort='-taggerdate' --format='%(taggerdate:iso8601),%(refname),' `"refs/tags/$releaseTagPattern`""
     $rawReleaseTags = Invoke-Expression $gitCommand
 
@@ -137,7 +144,16 @@ function Get-Releases($releaseTagPattern, $fixTagPattern) {
 .SYNOPSIS
 Calculate a set of release metrics for a given set of releases
 #>
-function Get-ReleaseMetrics($releases, $subDirs, $startDate, $ignoreReleases) {
+function global:Get-ReleaseMetrics {
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory=$true)]
+        [PSCustomObject]$releases,
+        [string]$subDirs,
+        [Parameter(Mandatory=$true)]
+        [string]$startDate,
+        [string]$ignoreReleases
+    )
     $thisRelease = $releases[0]
     for ($i = 1; $i -lt $releases.Count; $i++) {
         $lastRelease = $releases[$i]
