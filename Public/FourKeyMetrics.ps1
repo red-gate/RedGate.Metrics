@@ -166,16 +166,9 @@ function global:Get-ReleaseMetrics {
 
             if ($numberOfCommitAges -gt 0) {
                 if($evenNumberOfCommitAges) {
-                    write-host "Even"
-                    $mid = [Math]::Floor($numberOfCommitAges / 2)
-                    $MedianCommitAge = $commitAges[$mid]
-                    write-host $MedianCommitAge
-                    
-
                     $midh = [Math]::Floor($numberOfCommitAges / 2)
                     $midl = [Math]::Floor(($numberOfCommitAges - 1) / 2)
                     $MedianCommitAge = New-TimeSpan -Minutes (($commitAges[$midl].TotalMinutes + $commitAges[$midh].TotalMinutes) / 2)
-                    write-host $MedianCommitAge
                 }
                 else {
                     $mid = [Math]::Floor($numberOfCommitAges / 2)
