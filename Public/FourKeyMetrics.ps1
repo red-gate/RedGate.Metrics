@@ -162,10 +162,10 @@ function global:Get-ReleaseMetrics {
             $commitAges = Get-CommitsBetweenTags $lastRelease.TagRef $thisRelease.TagRef $subDirs | Foreach-Object -Process { $thisRelease.Date - $_.Date } | Sort-Object
             if ($commitAges.Count -gt 0) {
                 $mid = [Math]::Floor($commitAges.Count / 2)
-                $AverageCommitAge = $commitAges[$mid]
+                $MedianCommitAge = $commitAges[$mid]
             }
             else {
-                $AverageCommitAge = $null;
+                $MedianCommitAge = $null;
             }
 
             [PSCustomObject]@{
@@ -175,7 +175,7 @@ function global:Get-ReleaseMetrics {
                 ToDate           = $thisRelease.Date;
                 Interval         = $thisRelease.Date - $lastRelease.Date;
                 IsFix            = $thisRelease.IsFix;
-                AverageCommitAge = $AverageCommitAge;
+                MedianCommitAge = $MedianCommitAge;
             }
         }
 
@@ -246,7 +246,7 @@ function Get-AverageMetricsForPeriod($releaseMetrics, $endDate) {
     if ($releaseCount -gt 0){
         $deploymentFrequencyDays = ($releaseMetrics | ForEach-Object {$_.Interval.TotalDays} | Measure-Object -Average).Average;
         $failRate = $failedreleaseCount / $releaseCount
-        $leadTimeMeasures = $releaseMetrics | Where-Object {$null -ne $_.AverageCommitAge } | ForEach-Object { $_.AverageCommitAge.TotalDays } | Measure-Object -Average
+        $leadTimeMeasures = $releaseMetrics | Where-Object {$null -ne $_.MedianCommitAge } | ForEach-Object { $_.MedianCommitAge.TotalDays } | Measure-Object -Average
         $leadTimeAverage = $leadTimeMeasures.Average;
     }
     else {
