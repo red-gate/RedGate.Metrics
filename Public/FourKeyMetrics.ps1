@@ -162,13 +162,14 @@ function global:Get-ReleaseMetrics {
 
             $commitAges = Get-CommitsBetweenTags $lastRelease.TagRef $thisRelease.TagRef $subDirs | Foreach-Object -Process { $thisRelease.Date - $_.Date } | Sort-Object
             $numberOfCommitAges = $commitAges.Count
-            $evenNumberOfCommitAges = $numberOfCommitAges % 2 -eq 0;
 
             if ($numberOfCommitAges -gt 0) {
+
+                $evenNumberOfCommitAges = $numberOfCommitAges % 2 -eq 0;
+
                 if($evenNumberOfCommitAges) {
                     $midh = [Math]::Floor($numberOfCommitAges / 2)
-                    $midl = [Math]::Floor(($numberOfCommitAges - 1) / 2)
-                    $MedianCommitAge = New-TimeSpan -Minutes (($commitAges[$midl].TotalMinutes + $commitAges[$midh].TotalMinutes) / 2)
+                    $MedianCommitAge = New-TimeSpan -Minutes (($commitAges[$midh-1].TotalMinutes + $commitAges[$midh].TotalMinutes) / 2)
                 }
                 else {
                     $mid = [Math]::Floor($numberOfCommitAges / 2)
