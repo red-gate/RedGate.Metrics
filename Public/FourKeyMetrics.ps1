@@ -159,10 +159,28 @@ function global:Get-ReleaseMetrics {
         $lastRelease = $releases[$i]
 
         if (Assert-ReleaseShouldBeConsidered $ThisRelease.TagRef $ignoreReleases) {
+
             $commitAges = Get-CommitsBetweenTags $lastRelease.TagRef $thisRelease.TagRef $subDirs | Foreach-Object -Process { $thisRelease.Date - $_.Date } | Sort-Object
-            if ($commitAges.Count -gt 0) {
-                $mid = [Math]::Floor($commitAges.Count / 2)
-                $MedianCommitAge = $commitAges[$mid]
+            $numberOfCommitAges = $commitAges.Count
+            $evenNumberOfCommitAges = $numberOfCommitAges % 2 -eq 0;
+
+            if ($numberOfCommitAges -gt 0) {
+                if($evenNumberOfCommitAges) {
+                    write-host "Even"
+                    $mid = [Math]::Floor($numberOfCommitAges / 2)
+                    $MedianCommitAge = $commitAges[$mid]
+                    write-host $MedianCommitAge
+                    
+
+                    $midh = [Math]::Floor($numberOfCommitAges / 2)
+                    $midl = [Math]::Floor(($numberOfCommitAges - 1) / 2)
+                    $MedianCommitAge = New-TimeSpan -Minutes (($commitAges[$midl].TotalMinutes + $commitAges[$midh].TotalMinutes) / 2)
+                    write-host $MedianCommitAge
+                }
+                else {
+                    $mid = [Math]::Floor($numberOfCommitAges / 2)
+                    $MedianCommitAge = $commitAges[$mid]
+                }
             }
             else {
                 $MedianCommitAge = $null;
