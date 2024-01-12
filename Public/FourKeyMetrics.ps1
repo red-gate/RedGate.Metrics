@@ -244,26 +244,8 @@ function Get-MetricsForPeriod($releaseMetrics, $endDate) {
     if ($releaseCount -gt 0){
         $deploymentFrequencyDays = ($releaseMetrics | ForEach-Object {$_.Interval.TotalDays} | Measure-Object -Average).Average;
         $failRate = $failedreleaseCount / $releaseCount
-
-        $orderedLeadTimes = $releaseMetrics | Where-Object {$null -ne $_.CommitAges } | % { $_.CommitAges } | Sort-Object;       
-        $numberOfCommitAges = $orderedLeadTimes.Count
-
-        if ($numberOfCommitAges -gt 0) {
-
-            $evenNumberOfCommitAges = $numberOfCommitAges % 2 -eq 0;
-
-            if($evenNumberOfCommitAges) {
-                $midh = [Math]::Floor($numberOfCommitAges / 2)
-                $leadTimeMedian = ($orderedLeadTimes[$midh-1].TotalDays + $orderedLeadTimes[$midh].TotalDays) / 2
-            }
-            else {
-                $mid = [Math]::Floor($numberOfCommitAges / 2)
-                $leadTimeMedian = $orderedLeadTimes[$mid].TotalDays
-
-            }}
-            else {
-                $leadTimeMedian = $null
-            }
+        $leadTimes = $releaseMetrics | Where-Object {$null -ne $_.CommitAges } | % { $_.CommitAges };
+        $leadTimeMedian = Get-Median($leadTimes)       
     }
     else {
         $deploymentFrequencyDays = $null;
@@ -287,6 +269,28 @@ function Get-MetricsForPeriod($releaseMetrics, $endDate) {
         LeadTimeDays            = $leadTimeMedian;
         FailRate                = $failRate;
     }
+}
+
+function global:Get-Median($leadTimes){
+    $orderedLeadTimes = $leadTimes | Sort-Object;       
+    $numberOfCommitAges = $orderedLeadTimes.Count
+
+    if ($numberOfCommitAges -gt 0) {
+
+        $evenNumberOfCommitAges = $numberOfCommitAges % 2 -eq 0;
+
+        if($evenNumberOfCommitAges) {
+            $midh = [Math]::Floor($numberOfCommitAges / 2)
+            return ($orderedLeadTimes[$midh-1].TotalDays + $orderedLeadTimes[$midh].TotalDays) / 2
+        }
+        else {
+            $mid = [Math]::Floor($numberOfCommitAges / 2)
+            return $orderedLeadTimes[$mid].TotalDays
+
+        }}
+        else {
+            return $null
+        }
 }
 
 <#

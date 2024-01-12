@@ -2,6 +2,34 @@
 
 . ../Public/FourKeyMetrics.ps1
 
+Describe 'Check median calculations' {
+    Context 'Misc Tests' {
+            It 'should work for 2 ordered values' {
+                $median = Get-Median @(New-TimeSpan -days 1; New-TimeSpan -days 2)
+                $median | Should -Be 1.5 
+            }
+            It 'should work for 2 unordered values' {
+                $median = Get-Median @(New-TimeSpan -days 2; New-TimeSpan -days 1)
+                $median | Should -Be 1.5 
+            }
+            It 'should work for 3 ordered values' {
+                $median = Get-Median @(New-TimeSpan -D 1; New-TimeSpan -D 2; New-TimeSpan -D 3)
+                $median | Should -Be 2
+            }
+            It 'should work for 3 unordered values' {
+                $median = Get-Median @(New-TimeSpan -D 2; New-TimeSpan -D 3; New-TimeSpan -D 1)
+                $median | Should -Be 2
+            }
+            It 'should work for 4 ordered values' {
+                $median = Get-Median @(New-TimeSpan -D 1; New-TimeSpan -D 2; New-TimeSpan -D 3; ; New-TimeSpan -D 4)
+                $median | Should -Be 2.5
+            }
+            It 'should work for 4 unordered values' {
+                $median = Get-Median @(New-TimeSpan -D 2; New-TimeSpan -D 4; New-TimeSpan -D 3; New-TimeSpan -D 1)
+                $median | Should -Be 2.5
+            }
+    }
+}
 Describe 'Get-MetricsForPeriod' {
     Context 'Given no releases' {
         $releases = @()
