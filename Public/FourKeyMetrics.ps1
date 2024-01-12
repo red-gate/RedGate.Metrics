@@ -160,7 +160,7 @@ function global:Get-ReleaseMetrics {
 
         if (Assert-ReleaseShouldBeConsidered $ThisRelease.TagRef $ignoreReleases) {
 
-            $CommitAges = Get-CommitsBetweenTags $lastRelease.TagRef $thisRelease.TagRef $subDirs | Foreach-Object -Process { $thisRelease.Date - $_.Date } | Sort-Object
+            $CommitAges = Get-CommitsBetweenTags $lastRelease.TagRef $thisRelease.TagRef $subDirs | Foreach-Object -Process { $thisRelease.Date - $_.Date } 
         }
         else {
             
