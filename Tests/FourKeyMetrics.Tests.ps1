@@ -28,7 +28,7 @@ Describe 'Get-MetricsForPeriod' {
             ToDate          = [DateTime]"2019-05-17";
             Interval        = New-Timespan -D 14;
             IsFix           = $false;
-            MedianCommitAge = New-Timespan -H 24;
+            CommitAges      = @(New-Timespan -H 24);
         }
     
         $releases = @($release)
