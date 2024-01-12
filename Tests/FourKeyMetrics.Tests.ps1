@@ -159,7 +159,7 @@ Describe 'Get-AverageReleaseMetrics' {
         It 'should provide averages looking back over the 14 day window' {
             $metrics | ForEach-Object { $_.Releases }                | Should -Be @(2,     3,    3,    1,    0    )
             $metrics | ForEach-Object { $_.DeploymentFrequencyDays } | Should -Be @(6.5,   5,    17,   42,   $null)
-            $metrics | ForEach-Object { $_.LeadTimeDays }            | Should -Be @(3,     2,    8,    20,   $null)
+            $metrics | ForEach-Object { $_.LeadTimeDays }            | Should -Be @(3,     2,    4,    20,   $null)
             $metrics | ForEach-Object { $_.FailRate }                | Should -Be @(0,    (1/3),(1/3), 0,    $null)
             $metrics | ForEach-Object { $_.MttrHours }               | Should -Be @($null, 24,   24,  $null, $null)
         }

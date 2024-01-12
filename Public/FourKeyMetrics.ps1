@@ -245,9 +245,7 @@ function Get-MetricsForPeriod($releaseMetrics, $endDate) {
         $deploymentFrequencyDays = ($releaseMetrics | ForEach-Object {$_.Interval.TotalDays} | Measure-Object -Average).Average;
         $failRate = $failedreleaseCount / $releaseCount
 
-        $orderedLeadTimes = $releaseMetrics | Where-Object {$null -ne $_.CommitAges } | % { $_.CommitAges } | Sort-Object;
-        write-host $orderedLeadTimes.Count
-       
+        $orderedLeadTimes = $releaseMetrics | Where-Object {$null -ne $_.CommitAges } | % { $_.CommitAges } | Sort-Object;       
         $numberOfCommitAges = $orderedLeadTimes.Count
 
         if ($numberOfCommitAges -gt 0) {
