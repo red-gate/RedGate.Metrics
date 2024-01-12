@@ -272,14 +272,15 @@ function Get-MetricsForPeriod($releaseMetrics, $endDate) {
 }
 
 function global:Get-Median($leadTimes){
+    
     $orderedLeadTimes = $leadTimes | Sort-Object;       
     $numberOfCommitAges = $orderedLeadTimes.Count
 
     if ($numberOfCommitAges -gt 0) {
 
-        $evenNumberOfCommitAges = $numberOfCommitAges % 2 -eq 0;
+        $isEvenNumberOfCommitAges = $numberOfCommitAges % 2 -eq 0;
 
-        if($evenNumberOfCommitAges) {
+        if($isEvenNumberOfCommitAges) {
             $midh = [Math]::Floor($numberOfCommitAges / 2)
             return ($orderedLeadTimes[$midh-1].TotalDays + $orderedLeadTimes[$midh].TotalDays) / 2
         }
@@ -287,10 +288,10 @@ function global:Get-Median($leadTimes){
             $mid = [Math]::Floor($numberOfCommitAges / 2)
             return $orderedLeadTimes[$mid].TotalDays
 
-        }}
-        else {
-            return $null
         }
+    }
+
+    return $null
 }
 
 <#
