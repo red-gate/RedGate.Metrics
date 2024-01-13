@@ -13,11 +13,11 @@ Describe 'Check median calculations' {
                 $median | Should -Be 1.5 
             }
             It 'should work for 3 ordered values' {
-                $median = Get-Median @(New-TimeSpan -D 1; New-TimeSpan -D 2; New-TimeSpan -D 3)
+                $median = Get-Median @(New-TimeSpan -D 0; New-TimeSpan -D 2; New-TimeSpan -D 3)
                 $median | Should -Be 2
             }
             It 'should work for 3 unordered values' {
-                $median = Get-Median @(New-TimeSpan -D 2; New-TimeSpan -D 3; New-TimeSpan -D 1)
+                $median = Get-Median @(New-TimeSpan -D 2; New-TimeSpan -D 3; New-TimeSpan -D 0)
                 $median | Should -Be 2
             }
             It 'should work for 4 ordered values' {
