@@ -226,7 +226,7 @@ function global:Get-BucketedReleaseMetricsForReport {
         $startDate = $endDate.AddDays(-$windowSizeDays)
         $lookbackReleases = @($releaseMetrics | Where-Object { $_.ToDate -ge $startDate -AND $_.ToDate -le $endDate })
 
-        Get-MetricsForPeriod $lookbackReleases $endDate
+        Get-BucketedMetricsForPeriod $lookbackReleases $endDate
     }
 }
 
@@ -234,7 +234,7 @@ function global:Get-BucketedReleaseMetricsForReport {
 .SYNOPSIS
 Calculate bucketed values for the Four Key Metrics, based on a provided set of releases
 #>
-function Get-MetricsForPeriod($releaseMetrics, $endDate) {
+function Get-BucketedMetricsForPeriod($releaseMetrics, $endDate) {
     $releaseCount = $releaseMetrics.Count
     $failedReleaseCount = @($releaseMetrics | Where-Object { $_.IsFix }).Count
 
