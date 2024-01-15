@@ -51,7 +51,6 @@ function global:Invoke-FourKeyMetricsReportGeneration {
         -fixTagPattern $FixTagPattern `
         -startDate $StartDate `
         -repoSubDirs $RepoSubDirs `
-        -lookbackMonths $LookbackMonths `
         -ignoreReleases $ignoreReleases
 
     $bucketedReleaseMetrics = Get-ReleaseMetricsForReport `
@@ -93,8 +92,6 @@ function global:Get-ReleaseMetricsForCheckout {
         [datetime]$startDate,
         # Optional, case sensitive. Filters commits to a particular set of sub directories for use in mono-repos
         [string[]]$repoSubDirs = @(""),
-        # Optional. How many months back to report on
-        [int]$lookbackMonths = 12,
         # Optional. Release/s to exclude from lead time analysis
         [string[]] $ignoreReleases = @("")
     )
