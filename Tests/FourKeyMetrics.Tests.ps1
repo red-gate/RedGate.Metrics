@@ -126,7 +126,7 @@ Describe 'Get-MetricsForPeriod' {
     }
 }
 
-Describe 'Get-ReleaseMetricsForReport' {
+Describe 'Get-BucketedReleaseMetricsForReport' {
     Context 'Given multiple releases, a lookback period of 1 month, a window size of 14 days, and a window interval of 7 days' {
         $releases = @(
             [PSCustomObject]@{
@@ -173,7 +173,7 @@ Describe 'Get-ReleaseMetricsForReport' {
 
         Mock Get-Date { return [DateTime]"2019-06-07"}
 
-        $metrics = Get-ReleaseMetricsForReport $releases -lookbackMonths 1 -windowSizeDays 14 -windowIntervalDays 7 | Sort-Object -Property EndDate -Descending
+        $metrics = Get-BucketedReleaseMetricsForReport $releases -lookbackMonths 1 -windowSizeDays 14 -windowIntervalDays 7 | Sort-Object -Property EndDate -Descending
 
         It 'should provide results for windows going back for a month at 7 day intervals starting at the current date' {
             $metrics | ForEach-Object { $_.EndDate } | Should -Be @(

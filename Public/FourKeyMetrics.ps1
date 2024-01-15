@@ -3,7 +3,7 @@
 Build and publish a new Four Key Metrics report
 
 .DESCRIPTION
-Facade around Get-ReleaseMetricsForCheckout, Get-ReleaseMetricsForReport, New-FourKetMetricsReport, and Publish-FourKeyMetricsReport
+Facade around Get-ReleaseMetricsForCheckout, Get-BucketedReleaseMetricsForReport, New-FourKetMetricsReport, and Publish-FourKeyMetricsReport
 
 #>
 function global:Invoke-FourKeyMetricsReportGeneration {
@@ -53,7 +53,7 @@ function global:Invoke-FourKeyMetricsReportGeneration {
         -repoSubDirs $RepoSubDirs `
         -ignoreReleases $ignoreReleases
 
-    $bucketedReleaseMetrics = Get-ReleaseMetricsForReport `
+    $bucketedReleaseMetrics = Get-BucketedReleaseMetricsForReport `
         -lookbackMonths $LookbackMonths `
         -releaseMetrics $releaseMetrics `
         -windowSizeDays $WindowSizeDays `
@@ -207,7 +207,7 @@ function Get-CommitsBetweenTags($start, $end, $subDirs) {
     }
 }
 
-function global:Get-ReleaseMetricsForReport {
+function global:Get-BucketedReleaseMetricsForReport {
     [CmdletBinding()]
     param(
         # Pre-processed release metrics
