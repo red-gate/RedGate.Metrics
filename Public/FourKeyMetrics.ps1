@@ -54,13 +54,13 @@ function global:Invoke-FourKeyMetricsReportGeneration {
         -lookbackMonths $LookbackMonths `
         -ignoreReleases $ignoreReleases
 
-    $averageReleaseMetrics = Get-ReleaseMetricsForReport `
+    $bucketedReleaseMetrics = Get-ReleaseMetricsForReport `
         -lookbackMonths $LookbackMonths `
         -releaseMetrics $releaseMetrics `
         -windowSizeDays $WindowSizeDays `
         -windowIntervalDays $WindowIntervalDays
 
-    $reportFile = New-FourKeyMetricsReport -metrics $averageReleaseMetrics -productName $ProductName -outFilePath $OutFilePath -windowSize "$windowSizeDays days" -OutFileName $outFileName
+    $reportFile = New-FourKeyMetricsReport -metrics $bucketedReleaseMetrics -productName $ProductName -outFilePath $OutFilePath -windowSize "$windowSizeDays days" -OutFileName $outFileName
 
     if (PublishCredentialsProvided($OctopusFeedApiKey, $ReportPackageName, $ReportVersionNumber)) {
         Publish-FourKeyMetricsReport -reportFile $reportFile -packageName $ReportPackageName -octopusFeedApiKey $OctopusFeedApiKey -versionNumber $ReportVersionNumber
