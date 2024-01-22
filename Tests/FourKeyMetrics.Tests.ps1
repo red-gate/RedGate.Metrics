@@ -36,15 +36,15 @@ Describe 'Get-BucketedMetricsForPeriod' {
 
         $endDate = [DateTime]"2019-05-21";
 
-        $averageMetrics = Get-BucketedMetricsForPeriod $releases $endDate
+        $bucketedMetrics = Get-BucketedMetricsForPeriod $releases $endDate
 
         It 'should return an empty set of metrics' {
-            $averageMetrics.Releases | Should -Be "0" # Explicitly provide zero releases
-            $averageMetrics.DeploymentFrequencyDays | Should -Be $null
-            $averageMetrics.MttrHours | Should -Be $null
-            $averageMetrics.LeadTimeDays | Should -Be $null
-            $averageMetrics.FailRate | Should -Be $null
-            $averageMetrics.EndDate | Should -Be $endDate
+            $bucketedMetrics.Releases | Should -Be "0" # Explicitly provide zero releases
+            $bucketedMetrics.DeploymentFrequencyDays | Should -Be $null
+            $bucketedMetrics.MttrHours | Should -Be $null
+            $bucketedMetrics.LeadTimeDays | Should -Be $null
+            $bucketedMetrics.FailRate | Should -Be $null
+            $bucketedMetrics.EndDate | Should -Be $endDate
         }
     }
 
@@ -61,30 +61,30 @@ Describe 'Get-BucketedMetricsForPeriod' {
     
         $releases = @($release)
 
-        It 'should return average metrics equal to the metrics of that release' {
+        It 'should return bucketed metrics equal to the metrics of that release' {
             $endDate = [DateTime]"2019-05-17"
 
-            $averageMetrics = Get-BucketedMetricsForPeriod $releases $endDate
+            $bucketedMetrics = Get-BucketedMetricsForPeriod $releases $endDate
 
-            $averageMetrics.Releases | Should -Be "1" # Explicitly provide one release
-            $averageMetrics.DeploymentFrequencyDays | Should -Be "14" # Only 1 release, so the deployment frequency should be the same as the release interval
-            $averageMetrics.MttrHours | Should -Be $null # No recoveries in the provided dataset
-            $averageMetrics.LeadTimeDays | Should -Be "1" # Release has a lead time of one day
-            $averageMetrics.FailRate | Should -Be "0" # No failures
-            $averageMetrics.EndDate | Should -Be $endDate
+            $bucketedMetrics.Releases | Should -Be "1" # Explicitly provide one release
+            $bucketedMetrics.DeploymentFrequencyDays | Should -Be "14" # Only 1 release, so the deployment frequency should be the same as the release interval
+            $bucketedMetrics.MttrHours | Should -Be $null # No recoveries in the provided dataset
+            $bucketedMetrics.LeadTimeDays | Should -Be "1" # Release has a lead time of one day
+            $bucketedMetrics.FailRate | Should -Be "0" # No failures
+            $bucketedMetrics.EndDate | Should -Be $endDate
         }
 
         It 'should not degrade the deployment frequency as time passes' {
             $endDate = [DateTime]"2019-05-21"
 
-            $averageMetrics = Get-BucketedMetricsForPeriod $releases $endDate
+            $bucketedMetrics = Get-BucketedMetricsForPeriod $releases $endDate
 
-            $averageMetrics.Releases | Should -Be "1" # Explicitly provide one release
-            $averageMetrics.DeploymentFrequencyDays | Should -Be "14" # Only 1 release, so the deployment frequency should be the same as the release interval
-            $averageMetrics.MttrHours | Should -Be $null # No recoveries in the provided dataset
-            $averageMetrics.LeadTimeDays | Should -Be "1" # Release has a lead time of one day
-            $averageMetrics.FailRate | Should -Be "0" # No failures
-            $averageMetrics.EndDate | Should -Be $endDate
+            $bucketedMetrics.Releases | Should -Be "1" # Explicitly provide one release
+            $bucketedMetrics.DeploymentFrequencyDays | Should -Be "14" # Only 1 release, so the deployment frequency should be the same as the release interval
+            $bucketedMetrics.MttrHours | Should -Be $null # No recoveries in the provided dataset
+            $bucketedMetrics.LeadTimeDays | Should -Be "1" # Release has a lead time of one day
+            $bucketedMetrics.FailRate | Should -Be "0" # No failures
+            $bucketedMetrics.EndDate | Should -Be $endDate
         }
     }
 
@@ -113,15 +113,15 @@ Describe 'Get-BucketedMetricsForPeriod' {
 
         $endDate = [DateTime]"2019-05-21"
 
-        $averageMetrics = Get-BucketedMetricsForPeriod $releases $endDate
+        $bucketedMetrics = Get-BucketedMetricsForPeriod $releases $endDate
 
-        It 'should calculate the correct average metrics' {
-            $averageMetrics.Releases | Should -Be "2" # Explicitly provide two releases
-            $averageMetrics.DeploymentFrequencyDays | Should -Be "2.5" # Release intervals were 1 and 4, so average is 2.5
-            $averageMetrics.MttrHours | Should -Be 96 # Single recovery took four whole days
-            $averageMetrics.LeadTimeDays | Should -Be "1" # Both releases have a lead time of one day
-            $averageMetrics.FailRate | Should -Be "0.5" # One of two releases was a failure
-            $averageMetrics.EndDate | Should -Be $endDate
+        It 'should calculate the correct bucketed metrics' {
+            $bucketedMetrics.Releases | Should -Be "2" # Explicitly provide two releases
+            $bucketedMetrics.DeploymentFrequencyDays | Should -Be "2.5" # Release intervals were 1 and 4, so average is 2.5
+            $bucketedMetrics.MttrHours | Should -Be 96 # Single recovery took four whole days
+            $bucketedMetrics.LeadTimeDays | Should -Be "1" # Both releases have a lead time of one day
+            $bucketedMetrics.FailRate | Should -Be "0.5" # One of two releases was a failure
+            $bucketedMetrics.EndDate | Should -Be $endDate
         }
     }
 }
@@ -184,7 +184,7 @@ Describe 'Get-BucketedReleaseMetricsForReport' {
                 [DateTime]"2019-05-10") # 26-Apr to 10-May
         }
 
-        It 'should provide averages looking back over the 14 day window' {
+        It 'should provide values looking back over the 14 day window' {
             $metrics | ForEach-Object { $_.Releases }                | Should -Be @(2,     3,    3,    1,    0    )
             $metrics | ForEach-Object { $_.DeploymentFrequencyDays } | Should -Be @(6.5,   5,    17,   42,   $null)
             $metrics | ForEach-Object { $_.LeadTimeDays }            | Should -Be @(3,     2,    4,    20,   $null)
