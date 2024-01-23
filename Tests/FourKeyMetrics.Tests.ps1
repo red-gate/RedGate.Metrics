@@ -28,7 +28,7 @@ Describe 'Get-AverageMetricsForPeriod' {
             ToDate          = [DateTime]"2019-05-17";
             Interval        = New-Timespan -D 14;
             IsFix           = $false;
-            AverageCommitAge = New-Timespan -H 24;
+            MedianCommitAge = New-Timespan -H 24;
         }
     
         $releases = @($release)
@@ -68,7 +68,7 @@ Describe 'Get-AverageMetricsForPeriod' {
             ToDate          = [DateTime]"2019-05-21"
             Interval        = New-Timespan -D 4;
             IsFix           = $true;
-            AverageCommitAge = New-Timespan -H 24;
+            MedianCommitAge = New-Timespan -H 24;
         }
         
         $releaseOne = [PSCustomObject]@{
@@ -78,7 +78,7 @@ Describe 'Get-AverageMetricsForPeriod' {
             ToDate          = [DateTime]"2019-05-17"
             Interval        = New-Timespan -D 1;
             IsFix           = $false;
-            AverageCommitAge = New-Timespan -H 24;
+            MedianCommitAge = New-Timespan -H 24;
         }
     
         $releases = @($releaseTwo, $releaseOne)
@@ -108,7 +108,7 @@ Describe 'Get-AverageReleaseMetrics' {
                 ToDate          = [DateTime]"2019-05-13"
                 Interval        = New-Timespan -D 42;
                 IsFix           = $false;
-                AverageCommitAge = New-Timespan -D 20;},
+                MedianCommitAge = New-Timespan -D 20;},
             [PSCustomObject]@{
                 From            = "releases/0.1";
                 To              = "releases/0.2";
@@ -116,7 +116,7 @@ Describe 'Get-AverageReleaseMetrics' {
                 ToDate          = [DateTime]"2019-05-21"
                 Interval        = New-Timespan -D 8;
                 IsFix           = $false;
-                AverageCommitAge = New-Timespan -D 3.5;},
+                MedianCommitAge = New-Timespan -D 3.5;},
             [PSCustomObject]@{
                 From            = "releases/0.2";
                 To              = "releases/0.3/fix";
@@ -124,7 +124,7 @@ Describe 'Get-AverageReleaseMetrics' {
                 ToDate          = [DateTime]"2019-05-22"
                 Interval        = New-Timespan -D 1;
                 IsFix           = $true;
-                AverageCommitAge = New-Timespan -D 0.5;},
+                MedianCommitAge = New-Timespan -D 0.5;},
             [PSCustomObject]@{
                 From            = "releases/0.3/fix";
                 To              = "releases/0.4";
@@ -132,7 +132,7 @@ Describe 'Get-AverageReleaseMetrics' {
                 ToDate          = [DateTime]"2019-05-28"
                 Interval        = New-Timespan -D 6;
                 IsFix           = $false;
-                AverageCommitAge = New-Timespan -D 2;},
+                MedianCommitAge = New-Timespan -D 2;},
             [PSCustomObject]@{
                 From            = "releases/0.4";
                 To              = "releases/0.5";
@@ -140,7 +140,7 @@ Describe 'Get-AverageReleaseMetrics' {
                 ToDate          = [DateTime]"2019-06-04"
                 Interval        = New-Timespan -D 7;
                 IsFix           = $false;
-                AverageCommitAge = New-Timespan -D 4;}
+                MedianCommitAge = New-Timespan -D 4;}
             );        
 
         Mock Get-Date { return [DateTime]"2019-06-07"}
