@@ -2,13 +2,41 @@
 
 . ../Public/FourKeyMetrics.ps1
 
-Describe 'Get-AverageMetricsForPeriod' {
+Describe 'Check median calculations' {
+    Context 'Misc Tests' {
+            It 'should work for 2 ordered values' {
+                $median = Get-Median @(New-TimeSpan -days 1; New-TimeSpan -days 2)
+                $median | Should -Be 1.5 
+            }
+            It 'should work for 2 unordered values' {
+                $median = Get-Median @(New-TimeSpan -days 2; New-TimeSpan -days 1)
+                $median | Should -Be 1.5 
+            }
+            It 'should work for 3 ordered values' {
+                $median = Get-Median @(New-TimeSpan -D 0; New-TimeSpan -D 2; New-TimeSpan -D 3)
+                $median | Should -Be 2
+            }
+            It 'should work for 3 unordered values' {
+                $median = Get-Median @(New-TimeSpan -D 2; New-TimeSpan -D 3; New-TimeSpan -D 0)
+                $median | Should -Be 2
+            }
+            It 'should work for 4 ordered values' {
+                $median = Get-Median @(New-TimeSpan -D 1; New-TimeSpan -D 2; New-TimeSpan -D 3; ; New-TimeSpan -D 4)
+                $median | Should -Be 2.5
+            }
+            It 'should work for 4 unordered values' {
+                $median = Get-Median @(New-TimeSpan -D 2; New-TimeSpan -D 4; New-TimeSpan -D 3; New-TimeSpan -D 1)
+                $median | Should -Be 2.5
+            }
+    }
+}
+Describe 'Get-BucketedMetricsForPeriod' {
     Context 'Given no releases' {
         $releases = @()
 
         $endDate = [DateTime]"2019-05-21";
 
-        $averageMetrics = Get-AverageMetricsForPeriod $releases $endDate
+        $averageMetrics = Get-BucketedMetricsForPeriod $releases $endDate
 
         It 'should return an empty set of metrics' {
             $averageMetrics.Releases | Should -Be "0" # Explicitly provide zero releases
@@ -28,7 +56,7 @@ Describe 'Get-AverageMetricsForPeriod' {
             ToDate          = [DateTime]"2019-05-17";
             Interval        = New-Timespan -D 14;
             IsFix           = $false;
-            MedianCommitAge = New-Timespan -H 24;
+            CommitAges      = @(New-Timespan -H 24);
         }
     
         $releases = @($release)
@@ -36,7 +64,7 @@ Describe 'Get-AverageMetricsForPeriod' {
         It 'should return average metrics equal to the metrics of that release' {
             $endDate = [DateTime]"2019-05-17"
 
-            $averageMetrics = Get-AverageMetricsForPeriod $releases $endDate
+            $averageMetrics = Get-BucketedMetricsForPeriod $releases $endDate
 
             $averageMetrics.Releases | Should -Be "1" # Explicitly provide one release
             $averageMetrics.DeploymentFrequencyDays | Should -Be "14" # Only 1 release, so the deployment frequency should be the same as the release interval
@@ -49,7 +77,7 @@ Describe 'Get-AverageMetricsForPeriod' {
         It 'should not degrade the deployment frequency as time passes' {
             $endDate = [DateTime]"2019-05-21"
 
-            $averageMetrics = Get-AverageMetricsForPeriod $releases $endDate
+            $averageMetrics = Get-BucketedMetricsForPeriod $releases $endDate
 
             $averageMetrics.Releases | Should -Be "1" # Explicitly provide one release
             $averageMetrics.DeploymentFrequencyDays | Should -Be "14" # Only 1 release, so the deployment frequency should be the same as the release interval
@@ -68,7 +96,7 @@ Describe 'Get-AverageMetricsForPeriod' {
             ToDate          = [DateTime]"2019-05-21"
             Interval        = New-Timespan -D 4;
             IsFix           = $true;
-            MedianCommitAge = New-Timespan -H 24;
+            CommitAges      = @(New-Timespan -H 24);
         }
         
         $releaseOne = [PSCustomObject]@{
@@ -78,14 +106,14 @@ Describe 'Get-AverageMetricsForPeriod' {
             ToDate          = [DateTime]"2019-05-17"
             Interval        = New-Timespan -D 1;
             IsFix           = $false;
-            MedianCommitAge = New-Timespan -H 24;
+            CommitAges      = @(New-Timespan -H 24);
         }
     
         $releases = @($releaseTwo, $releaseOne)
 
         $endDate = [DateTime]"2019-05-21"
 
-        $averageMetrics = Get-AverageMetricsForPeriod $releases $endDate
+        $averageMetrics = Get-BucketedMetricsForPeriod $releases $endDate
 
         It 'should calculate the correct average metrics' {
             $averageMetrics.Releases | Should -Be "2" # Explicitly provide two releases
@@ -98,7 +126,7 @@ Describe 'Get-AverageMetricsForPeriod' {
     }
 }
 
-Describe 'Get-AverageReleaseMetrics' {
+Describe 'Get-BucketedReleaseMetricsForReport' {
     Context 'Given multiple releases, a lookback period of 1 month, a window size of 14 days, and a window interval of 7 days' {
         $releases = @(
             [PSCustomObject]@{
@@ -108,7 +136,7 @@ Describe 'Get-AverageReleaseMetrics' {
                 ToDate          = [DateTime]"2019-05-13"
                 Interval        = New-Timespan -D 42;
                 IsFix           = $false;
-                MedianCommitAge = New-Timespan -D 20;},
+                CommitAges      = @(New-Timespan -D 20);},
             [PSCustomObject]@{
                 From            = "releases/0.1";
                 To              = "releases/0.2";
@@ -116,7 +144,7 @@ Describe 'Get-AverageReleaseMetrics' {
                 ToDate          = [DateTime]"2019-05-21"
                 Interval        = New-Timespan -D 8;
                 IsFix           = $false;
-                MedianCommitAge = New-Timespan -D 3.5;},
+                CommitAges      = @(New-Timespan -D 3.5);},
             [PSCustomObject]@{
                 From            = "releases/0.2";
                 To              = "releases/0.3/fix";
@@ -124,7 +152,7 @@ Describe 'Get-AverageReleaseMetrics' {
                 ToDate          = [DateTime]"2019-05-22"
                 Interval        = New-Timespan -D 1;
                 IsFix           = $true;
-                MedianCommitAge = New-Timespan -D 0.5;},
+                CommitAges      = @(New-Timespan -D 0.5);},
             [PSCustomObject]@{
                 From            = "releases/0.3/fix";
                 To              = "releases/0.4";
@@ -132,7 +160,7 @@ Describe 'Get-AverageReleaseMetrics' {
                 ToDate          = [DateTime]"2019-05-28"
                 Interval        = New-Timespan -D 6;
                 IsFix           = $false;
-                MedianCommitAge = New-Timespan -D 2;},
+                CommitAges      = @(New-Timespan -D 2);},
             [PSCustomObject]@{
                 From            = "releases/0.4";
                 To              = "releases/0.5";
@@ -140,12 +168,12 @@ Describe 'Get-AverageReleaseMetrics' {
                 ToDate          = [DateTime]"2019-06-04"
                 Interval        = New-Timespan -D 7;
                 IsFix           = $false;
-                MedianCommitAge = New-Timespan -D 4;}
+                CommitAges      = @(New-Timespan -D 4);}
             );        
 
         Mock Get-Date { return [DateTime]"2019-06-07"}
 
-        $metrics = Get-AverageReleaseMetrics $releases -lookbackMonths 1 -windowSizeDays 14 -windowIntervalDays 7 | Sort-Object -Property EndDate -Descending
+        $metrics = Get-BucketedReleaseMetricsForReport $releases -lookbackMonths 1 -windowSizeDays 14 -windowIntervalDays 7 | Sort-Object -Property EndDate -Descending
 
         It 'should provide results for windows going back for a month at 7 day intervals starting at the current date' {
             $metrics | ForEach-Object { $_.EndDate } | Should -Be @(
@@ -159,7 +187,7 @@ Describe 'Get-AverageReleaseMetrics' {
         It 'should provide averages looking back over the 14 day window' {
             $metrics | ForEach-Object { $_.Releases }                | Should -Be @(2,     3,    3,    1,    0    )
             $metrics | ForEach-Object { $_.DeploymentFrequencyDays } | Should -Be @(6.5,   5,    17,   42,   $null)
-            $metrics | ForEach-Object { $_.LeadTimeDays }            | Should -Be @(3,     2,    8,    20,   $null)
+            $metrics | ForEach-Object { $_.LeadTimeDays }            | Should -Be @(3,     2,    4,    20,   $null)
             $metrics | ForEach-Object { $_.FailRate }                | Should -Be @(0,    (1/3),(1/3), 0,    $null)
             $metrics | ForEach-Object { $_.MttrHours }               | Should -Be @($null, 24,   24,  $null, $null)
         }

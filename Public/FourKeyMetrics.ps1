@@ -3,7 +3,7 @@
 Build and publish a new Four Key Metrics report
 
 .DESCRIPTION
-Facade around Get-ReleaseMetricsForCheckout, Get-AverageReleaseMetrics, New-FourKetMetricsReport, and Publish-FourKeyMetricsReport
+Facade around Get-ReleaseMetricsForCheckout, Get-BucketedReleaseMetricsForReport, New-FourKeyMetricsReport, and Publish-FourKeyMetricsReport
 
 #>
 function global:Invoke-FourKeyMetricsReportGeneration {
@@ -51,16 +51,15 @@ function global:Invoke-FourKeyMetricsReportGeneration {
         -fixTagPattern $FixTagPattern `
         -startDate $StartDate `
         -repoSubDirs $RepoSubDirs `
-        -lookbackMonths $LookbackMonths `
         -ignoreReleases $ignoreReleases
 
-    $averageReleaseMetrics = Get-AverageReleaseMetrics `
+    $bucketedReleaseMetrics = Get-BucketedReleaseMetricsForReport `
         -lookbackMonths $LookbackMonths `
         -releaseMetrics $releaseMetrics `
         -windowSizeDays $WindowSizeDays `
         -windowIntervalDays $WindowIntervalDays
 
-    $reportFile = New-FourKeyMetricsReport -metrics $averageReleaseMetrics -productName $ProductName -outFilePath $OutFilePath -windowSize "$windowSizeDays days" -OutFileName $outFileName
+    $reportFile = New-FourKeyMetricsReport -metrics $bucketedReleaseMetrics -productName $ProductName -outFilePath $OutFilePath -windowSize "$windowSizeDays days" -OutFileName $outFileName
 
     if (PublishCredentialsProvided($OctopusFeedApiKey, $ReportPackageName, $ReportVersionNumber)) {
         Publish-FourKeyMetricsReport -reportFile $reportFile -packageName $ReportPackageName -octopusFeedApiKey $OctopusFeedApiKey -versionNumber $ReportVersionNumber
@@ -93,8 +92,6 @@ function global:Get-ReleaseMetricsForCheckout {
         [datetime]$startDate,
         # Optional, case sensitive. Filters commits to a particular set of sub directories for use in mono-repos
         [string[]]$repoSubDirs = @(""),
-        # Optional. How many months back to report on
-        [int]$lookbackMonths = 12,
         # Optional. Release/s to exclude from lead time analysis
         [string[]] $ignoreReleases = @("")
     )
@@ -160,35 +157,21 @@ function global:Get-ReleaseMetrics {
 
         if (Assert-ReleaseShouldBeConsidered $ThisRelease.TagRef $ignoreReleases) {
 
-            $commitAges = Get-CommitsBetweenTags $lastRelease.TagRef $thisRelease.TagRef $subDirs | Foreach-Object -Process { $thisRelease.Date - $_.Date } | Sort-Object
-            $numberOfCommitAges = $commitAges.Count
-
-            if ($numberOfCommitAges -gt 0) {
-
-                $evenNumberOfCommitAges = $numberOfCommitAges % 2 -eq 0;
-
-                if($evenNumberOfCommitAges) {
-                    $midh = [Math]::Floor($numberOfCommitAges / 2)
-                    $MedianCommitAge = New-TimeSpan -Minutes (($commitAges[$midh-1].TotalMinutes + $commitAges[$midh].TotalMinutes) / 2)
-                }
-                else {
-                    $mid = [Math]::Floor($numberOfCommitAges / 2)
-                    $MedianCommitAge = $commitAges[$mid]
-                }
-            }
-            else {
-                $MedianCommitAge = $null;
-            }
-
-            [PSCustomObject]@{
+            $CommitAges = Get-CommitsBetweenTags $lastRelease.TagRef $thisRelease.TagRef $subDirs | Foreach-Object -Process { $thisRelease.Date - $_.Date } 
+        }
+        else {
+            
+            $CommitAges = $null;
+        }
+        
+        [PSCustomObject]@{
                 From             = $lastRelease.TagRef;
                 To               = $thisRelease.TagRef;
                 FromDate         = $lastRelease.Date;
                 ToDate           = $thisRelease.Date;
                 Interval         = $thisRelease.Date - $lastRelease.Date;
                 IsFix            = $thisRelease.IsFix;
-                MedianCommitAge = $MedianCommitAge;
-            }
+                CommitAges       = $CommitAges;
         }
 
         if ($lastRelease.Date -le $startDate) {
@@ -224,7 +207,7 @@ function Get-CommitsBetweenTags($start, $end, $subDirs) {
     }
 }
 
-function global:Get-AverageReleaseMetrics {
+function global:Get-BucketedReleaseMetricsForReport {
     [CmdletBinding()]
     param(
         # Pre-processed release metrics
@@ -243,28 +226,28 @@ function global:Get-AverageReleaseMetrics {
         $startDate = $endDate.AddDays(-$windowSizeDays)
         $lookbackReleases = @($releaseMetrics | Where-Object { $_.ToDate -ge $startDate -AND $_.ToDate -le $endDate })
 
-        Get-AverageMetricsForPeriod $lookbackReleases $endDate
+        Get-BucketedMetricsForPeriod $lookbackReleases $endDate
     }
 }
 
 <#
 .SYNOPSIS
-Calculate averages for the Four Key Metrics, based on a provided set of releases
+Calculate bucketed values for the Four Key Metrics, based on a provided set of releases
 #>
-function Get-AverageMetricsForPeriod($releaseMetrics, $endDate) {
+function Get-BucketedMetricsForPeriod($releaseMetrics, $endDate) {
     $releaseCount = $releaseMetrics.Count
     $failedReleaseCount = @($releaseMetrics | Where-Object { $_.IsFix }).Count
 
     if ($releaseCount -gt 0){
         $deploymentFrequencyDays = ($releaseMetrics | ForEach-Object {$_.Interval.TotalDays} | Measure-Object -Average).Average;
         $failRate = $failedreleaseCount / $releaseCount
-        $leadTimeMeasures = $releaseMetrics | Where-Object {$null -ne $_.MedianCommitAge } | ForEach-Object { $_.MedianCommitAge.TotalDays } | Measure-Object -Average
-        $leadTimeAverage = $leadTimeMeasures.Average;
+        $leadTimes = $releaseMetrics | Where-Object {$null -ne $_.CommitAges } | % { $_.CommitAges };
+        $leadTimeMedian = Get-Median($leadTimes)       
     }
     else {
         $deploymentFrequencyDays = $null;
         $failRate = $null;
-        $leadTimeAverage = $null;
+        $leadTimeMedian = $null;
     }
 
     if ($failedreleaseCount -gt 0){
@@ -280,9 +263,32 @@ function Get-AverageMetricsForPeriod($releaseMetrics, $endDate) {
         Releases                = $releaseCount;
         DeploymentFrequencyDays = $deploymentFrequencyDays;
         MttrHours               = $mttrAverage;
-        LeadTimeDays            = $leadTimeAverage;
+        LeadTimeDays            = $leadTimeMedian;
         FailRate                = $failRate;
     }
+}
+
+function global:Get-Median($leadTimes){
+    
+    $orderedLeadTimes = $leadTimes | Sort-Object;       
+    $numberOfCommitAges = $orderedLeadTimes.Count
+
+    if ($numberOfCommitAges -gt 0) {
+
+        $isEvenNumberOfCommitAges = $numberOfCommitAges % 2 -eq 0;
+
+        if($isEvenNumberOfCommitAges) {
+            $midh = [Math]::Floor($numberOfCommitAges / 2)
+            return ($orderedLeadTimes[$midh-1].TotalDays + $orderedLeadTimes[$midh].TotalDays) / 2
+        }
+        else {
+            $mid = [Math]::Floor($numberOfCommitAges / 2)
+            return $orderedLeadTimes[$mid].TotalDays
+
+        }
+    }
+
+    return $null
 }
 
 <#
