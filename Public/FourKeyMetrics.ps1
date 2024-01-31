@@ -98,7 +98,7 @@ function global:Get-ReleaseMetricsForCheckout {
     Push-Location $checkoutLocation
 
     $releases = Get-Releases $releaseTagPattern $fixTagPattern
-    Get-ReleaseMetrics $releases $repoSubDirs $startDate $ignoreReleases
+    Get-ReleaseMetrics $releases $repoSubDirs $startDate $ignoreReleases $authors
 
     Pop-Location
 }
@@ -149,21 +149,20 @@ function global:Get-ReleaseMetrics {
         [string[]]$subDirs,
         [Parameter(Mandatory=$true)]
         [string]$startDate,
-        [string[]]$ignoreReleases
+        [string[]]$ignoreReleases,
+        [string[]]$authors
     )
     $thisRelease = $releases[0]
     for ($i = 1; $i -lt $releases.Count; $i++) {
         $lastRelease = $releases[$i]
 
         if (Assert-ReleaseShouldBeConsidered $ThisRelease.TagRef $ignoreReleases) {
-
-            $CommitAges = Get-CommitsBetweenTags $lastRelease.TagRef $thisRelease.TagRef $subDirs | Foreach-Object -Process { $thisRelease.Date - $_.Date } 
+            $CommitAges = Get-CommitsBetweenTags $lastRelease.TagRef $thisRelease.TagRef $subDirs $authors | Foreach-Object -Process { $thisRelease.Date - $_.Date } 
         }
         else {
-            
             $CommitAges = $null;
         }
-        
+
         [PSCustomObject]@{
                 From             = $lastRelease.TagRef;
                 To               = $thisRelease.TagRef;
@@ -190,8 +189,14 @@ function Assert-ReleaseShouldBeConsidered($thisReleaseTagRef, $ignoreReleases) {
 .SYNOPSIS
 Get a list of all commits added to master between two release tags
 #>
-function Get-CommitsBetweenTags($start, $end, $subDirs) {
-    $gitCommand = "git log --pretty=format:`"%h,%ai`" `"$start..$end`" --no-merges -- $subDirs"
+function Get-CommitsBetweenTags($start, $end, $subDirs, $authors) {
+    # Assume we're not filtering by authors, but build up a filter if we want one
+    $authorFilter = ""
+    foreach ($author in $authors) {
+        $authorFilter = $authorFilter + "--author=`"$author`" "
+    }
+
+    $gitCommand = "git log --pretty=format:`"%h,%ai`" `"$start..$end`" --no-merges $authorFilter -- $subDirs"
     $rawCommits = Invoke-Expression $gitCommand
 
     if ($LastExitCode -ne 0) {
