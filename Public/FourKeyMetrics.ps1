@@ -163,7 +163,11 @@ function global:Get-ReleaseMetrics {
             $CommitAges = $null;
         }
 
-        [PSCustomObject]@{
+        if ($null -eq $CommitAges){
+            Write-Warning "Release $($thisRelease.TagRef) has no relevant commits and will be ignored"
+        }
+        else {
+            [PSCustomObject]@{
                 From             = $previousRelease.TagRef;
                 To               = $thisRelease.TagRef;
                 FromDate         = $previousRelease.Date;
@@ -171,6 +175,7 @@ function global:Get-ReleaseMetrics {
                 Interval         = $thisRelease.Date - $previousRelease.Date;
                 IsFix            = $thisRelease.IsFix;
                 CommitAges       = $CommitAges;
+            }
         }
 
         if ($previousRelease.Date -le $startDate) {
