@@ -154,30 +154,30 @@ function global:Get-ReleaseMetrics {
     )
     $thisRelease = $releases[0]
     for ($i = 1; $i -lt $releases.Count; $i++) {
-        $lastRelease = $releases[$i]
+        $previousRelease = $releases[$i]
 
         if (Assert-ReleaseNotIgnored $ThisRelease.TagRef $ignoreReleases) {
-            $CommitAges = Get-CommitsBetweenTags $lastRelease.TagRef $thisRelease.TagRef $subDirs $authors | Foreach-Object -Process { $thisRelease.Date - $_.Date } 
+            $CommitAges = Get-CommitsBetweenTags $previousRelease.TagRef $thisRelease.TagRef $subDirs $authors | Foreach-Object -Process { $thisRelease.Date - $_.Date } 
         }
         else {
             $CommitAges = $null;
         }
 
         [PSCustomObject]@{
-                From             = $lastRelease.TagRef;
+                From             = $previousRelease.TagRef;
                 To               = $thisRelease.TagRef;
-                FromDate         = $lastRelease.Date;
+                FromDate         = $previousRelease.Date;
                 ToDate           = $thisRelease.Date;
-                Interval         = $thisRelease.Date - $lastRelease.Date;
+                Interval         = $thisRelease.Date - $previousRelease.Date;
                 IsFix            = $thisRelease.IsFix;
                 CommitAges       = $CommitAges;
         }
 
-        if ($lastRelease.Date -le $startDate) {
+        if ($previousRelease.Date -le $startDate) {
             break
         }
 
-        $thisRelease = $lastRelease
+        $thisRelease = $previousRelease
     }
 }
 
