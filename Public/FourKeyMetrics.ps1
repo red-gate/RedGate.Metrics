@@ -156,7 +156,7 @@ function global:Get-ReleaseMetrics {
     for ($i = 1; $i -lt $releases.Count; $i++) {
         $lastRelease = $releases[$i]
 
-        if (Assert-ReleaseShouldBeConsidered $ThisRelease.TagRef $ignoreReleases) {
+        if (Assert-ReleaseNotIgnored $ThisRelease.TagRef $ignoreReleases) {
             $CommitAges = Get-CommitsBetweenTags $lastRelease.TagRef $thisRelease.TagRef $subDirs $authors | Foreach-Object -Process { $thisRelease.Date - $_.Date } 
         }
         else {
@@ -181,7 +181,7 @@ function global:Get-ReleaseMetrics {
     }
 }
 
-function Assert-ReleaseShouldBeConsidered($thisReleaseTagRef, $ignoreReleases) {
+function Assert-ReleaseNotIgnored($thisReleaseTagRef, $ignoreReleases) {
     return !($ignoreReleases | Where-Object {$thisReleaseTagRef -Like "refs/tags/$_"})
 }
 

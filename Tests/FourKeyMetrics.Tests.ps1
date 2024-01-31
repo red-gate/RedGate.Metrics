@@ -194,12 +194,12 @@ Describe 'Get-BucketedReleaseMetricsForReport' {
     }
 }
 
-Describe 'Assert-ReleaseShouldBeConsidered' {
+Describe 'Assert-ReleaseNotIgnored' {
     Context 'Given no releases should be ignored' {
         $ignoreReleases = @()
 
         It 'should return true for a given release' {
-            $val = Assert-ReleaseShouldBeConsidered "refs/tags/someTag" $ignoreReleases
+            $val = Assert-ReleaseNotIgnored "refs/tags/someTag" $ignoreReleases
             $val | Should -Be $true
         }
     }
@@ -207,12 +207,12 @@ Describe 'Assert-ReleaseShouldBeConsidered' {
         $ignoreReleases = @("releaseToIgnore")
 
         It 'should return false for a the ignored release' {
-            $val = Assert-ReleaseShouldBeConsidered "refs/tags/releaseToIgnore" $ignoreReleases
+            $val = Assert-ReleaseNotIgnored "refs/tags/releaseToIgnore" $ignoreReleases
             $val | Should -Be $false
         }
 
         It 'should return true for another release' {
-            $val = Assert-ReleaseShouldBeConsidered "refs/tags/someTag" $ignoreReleases
+            $val = Assert-ReleaseNotIgnored "refs/tags/someTag" $ignoreReleases
             $val | Should -Be $true
         }
     }
@@ -220,12 +220,12 @@ Describe 'Assert-ReleaseShouldBeConsidered' {
         $ignoreReleases = @("releaseToIgnore", "anotherReleaseToIgnore")
 
         It 'should return false for an ignored release' {
-            $val = Assert-ReleaseShouldBeConsidered "refs/tags/anotherReleaseToIgnore" $ignoreReleases
+            $val = Assert-ReleaseNotIgnored "refs/tags/anotherReleaseToIgnore" $ignoreReleases
             $val | Should -Be $false
         }
 
         It 'should return true for another release' {
-            $val = Assert-ReleaseShouldBeConsidered "refs/tags/someTag" $ignoreReleases
+            $val = Assert-ReleaseNotIgnored "refs/tags/someTag" $ignoreReleases
             $val | Should -Be $true
         }
     }
