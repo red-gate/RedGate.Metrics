@@ -98,7 +98,7 @@ function global:Get-ReleaseMetricsForCheckout {
     Push-Location $checkoutLocation
 
     $releases = Get-Releases $releaseTagPattern $fixTagPattern
-    Get-ReleaseMetrics $releases $repoSubDirs $startDate $ignoreReleases
+    Get-ReleaseMetrics $releases $repoSubDirs $startDate $ignoreReleases $authors
 
     Pop-Location
 }
@@ -149,40 +149,44 @@ function global:Get-ReleaseMetrics {
         [string[]]$subDirs,
         [Parameter(Mandatory=$true)]
         [string]$startDate,
-        [string[]]$ignoreReleases
+        [string[]]$ignoreReleases,
+        [string[]]$authors
     )
     $thisRelease = $releases[0]
     for ($i = 1; $i -lt $releases.Count; $i++) {
-        $lastRelease = $releases[$i]
+        $previousRelease = $releases[$i]
 
-        if (Assert-ReleaseShouldBeConsidered $ThisRelease.TagRef $ignoreReleases) {
-
-            $CommitAges = Get-CommitsBetweenTags $lastRelease.TagRef $thisRelease.TagRef $subDirs | Foreach-Object -Process { $thisRelease.Date - $_.Date } 
+        if (Assert-ReleaseNotIgnored $ThisRelease.TagRef $ignoreReleases) {
+            $CommitAges = Get-CommitsBetweenTags $previousRelease.TagRef $thisRelease.TagRef $subDirs $authors | Foreach-Object -Process { $thisRelease.Date - $_.Date } 
         }
         else {
-            
             $CommitAges = $null;
         }
-        
-        [PSCustomObject]@{
-                From             = $lastRelease.TagRef;
+
+        if ($null -eq $CommitAges){
+            Write-Warning "Release $($thisRelease.TagRef) has no relevant commits and will be ignored"
+        }
+        else {
+            [PSCustomObject]@{
+                From             = $previousRelease.TagRef;
                 To               = $thisRelease.TagRef;
-                FromDate         = $lastRelease.Date;
+                FromDate         = $previousRelease.Date;
                 ToDate           = $thisRelease.Date;
-                Interval         = $thisRelease.Date - $lastRelease.Date;
+                Interval         = $thisRelease.Date - $previousRelease.Date;
                 IsFix            = $thisRelease.IsFix;
                 CommitAges       = $CommitAges;
+            }
         }
 
-        if ($lastRelease.Date -le $startDate) {
+        if ($previousRelease.Date -le $startDate) {
             break
         }
 
-        $thisRelease = $lastRelease
+        $thisRelease = $previousRelease
     }
 }
 
-function Assert-ReleaseShouldBeConsidered($thisReleaseTagRef, $ignoreReleases) {
+function Assert-ReleaseNotIgnored($thisReleaseTagRef, $ignoreReleases) {
     return !($ignoreReleases | Where-Object {$thisReleaseTagRef -Like "refs/tags/$_"})
 }
 
@@ -190,8 +194,14 @@ function Assert-ReleaseShouldBeConsidered($thisReleaseTagRef, $ignoreReleases) {
 .SYNOPSIS
 Get a list of all commits added to master between two release tags
 #>
-function Get-CommitsBetweenTags($start, $end, $subDirs) {
-    $gitCommand = "git log --pretty=format:`"%h,%ai`" `"$start..$end`" --no-merges -- $subDirs"
+function Get-CommitsBetweenTags($start, $end, $subDirs, $authors) {
+    # Assume we're not filtering by authors, but build up a filter if we want one
+    $authorFilter = ""
+    foreach ($author in $authors) {
+        $authorFilter = $authorFilter + "--author=`"$author`" "
+    }
+
+    $gitCommand = "git log --pretty=format:`"%h,%ai`" `"$start..$end`" --no-merges $authorFilter -- $subDirs"
     $rawCommits = Invoke-Expression $gitCommand
 
     if ($LastExitCode -ne 0) {
