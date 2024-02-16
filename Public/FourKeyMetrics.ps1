@@ -250,14 +250,22 @@ function Get-BucketedMetricsForPeriod($releaseMetrics, $endDate) {
 
     if ($releaseCount -gt 0){
         $deploymentFrequencyDays = ($releaseMetrics | ForEach-Object {$_.Interval.TotalDays} | Measure-Object -Average).Average;
+        $deploymentFrequencyLow = ($releaseMetrics | ForEach-Object {$_.Interval.TotalDays} | Measure-Object -Minimum).Minimum;
+        $deploymentFrequencyHigh = ($releaseMetrics | ForEach-Object {$_.Interval.TotalDays} | Measure-Object -Maximum).Maximum;
         $failRate = $failedreleaseCount / $releaseCount
-        $leadTimes = $releaseMetrics | Where-Object {$null -ne $_.CommitAges } | % { $_.CommitAges };
-        $leadTimeMedian = Get-Median($leadTimes)       
+        $leadTimes = $releaseMetrics | Where-Object {$null -ne $_.CommitAges } | ForEach-Object { $_.CommitAges };
+        $leadTimeMedian = Get-Median($leadTimes)
+        $leadTimeLow = ($leadTimes | ForEach-Object {$_.TotalDays} | Measure-Object -Minimum).Minimum;
+        $leadTimeHigh = ($leadTimes | ForEach-Object {$_.TotalDays}| Measure-Object -Maximum).Maximum
     }
     else {
         $deploymentFrequencyDays = $null;
+        $deploymentFrequencyLow = $null;
+        $deploymentFrequencyHigh = $null;
         $failRate = $null;
         $leadTimeMedian = $null;
+        $leadTimeLow = $null;
+        $leadTimeHigh = $null;
     }
 
     if ($failedreleaseCount -gt 0){
@@ -272,8 +280,12 @@ function Get-BucketedMetricsForPeriod($releaseMetrics, $endDate) {
         EndDate                 = $endDate
         Releases                = $releaseCount;
         DeploymentFrequencyDays = $deploymentFrequencyDays;
+        DeploymentFrequencyLow  = $deploymentFrequencyLow;
+        DeploymentFrequencyHigh = $deploymentFrequencyHigh;
         MttrHours               = $mttrAverage;
         LeadTimeDays            = $leadTimeMedian;
+        LeadTimeLow             = $leadTimeLow;
+        LeadTimeHigh            = $leadTimeHigh;
         FailRate                = $failRate;
     }
 }
@@ -345,7 +357,7 @@ function global:New-FourKeyMetricsReport {
 }
 
 function ConvertTo-JsonWithJavascript($period){
-    "[new Date($(DateTimeToTimestamp($period.EndDate))), $(ValueOrNull($period.DeploymentFrequencyDays)), $(ValueOrNull($period.LeadTimeDays)), $(ValueOrNull($period.FailRate)), $(ValueOrNull($period.MttrHours))]"
+    "[new Date($(DateTimeToTimestamp($period.EndDate))), $(ValueOrNull($period.DeploymentFrequencyDays)), $(ValueOrNull($period.DeploymentFrequencyLow)), $(ValueOrNull($period.DeploymentFrequencyHigh)), $(ValueOrNull($period.LeadTimeDays)), $(ValueOrNull($period.LeadTimeLow)), $(ValueOrNull($period.LeadTimeHigh)),  $(ValueOrNull($period.FailRate)), $(ValueOrNull($period.MttrHours))]"
 }
 
 function ValueOrNull($value)
