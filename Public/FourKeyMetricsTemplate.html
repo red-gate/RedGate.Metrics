@@ -16,7 +16,11 @@
         var data = new google.visualization.DataTable();
         data.addColumn("date", "EndDate");
         data.addColumn("number", "Deployment Frequency");
+        data.addColumn({type:"number", id:"i0", role:'interval'});
+        data.addColumn({type:"number", id:"i1", role:'interval'});
         data.addColumn("number", "Delivery Lead Time");
+        data.addColumn({type:"number", id:"i0", role:'interval'});
+        data.addColumn({type:"number", id:"i1", role:'interval'});
         data.addColumn("number", "Change Failure Rate");
         data.addColumn("number", "Mean Time to Recovery");
   
@@ -30,20 +34,22 @@
         ]);
   
         const charts = [
-          [1, "deploy-freq", "Days", "#336dc2"],
-          [2, "lead-time", "Days", "#128024"],
-          [3, "fail-rate", "Percent", "#c00", "percent"],
-          [4, "mttr", "Hours", "#fc9003"]
+          [1, 2, 3, "deploy-freq", "Days", "#336dc2"],
+          [4, 5, 6, "lead-time", "Days", "#128024"],
+          [7, 7, 7, "fail-rate", "Percent", "#c00", "percent"],
+          [8, 8, 8, "mttr", "Hours", "#fc9003"]
         ];
-  
+
         charts.forEach(c => {
-          const [colIndex, elementId, vAxisTitle, color, format] = c;
+          const [colIndex, lowColIndex, highColIndex, elementId, vAxisTitle, color, format] = c;
   
           var dataView = new google.visualization.DataView(data);
-          dataView.setColumns([0, colIndex]);
-          var chart = new google.visualization.LineChart(
+          dataView.setColumns([0, colIndex, lowColIndex, highColIndex]);
+
+          var chart = new google.visualization.ComboChart(
             document.getElementById(elementId).getElementsByClassName("content")[0]
           );
+
           chart.draw(dataView, {
             vAxis: { title: vAxisTitle, format, minValue: 0, maxValue: 1 },
             legend: { position: "none" },
@@ -52,7 +58,12 @@
             pointSize: 6,
             trendlines: { 0: { pointSize: 0 }},
             interpolateNulls: true,
-            hAxis: {minValue: REPORTSTARTDATE_PLACEHOLDER, maxValue: REPORTENDDATE_PLACEHOLDER}
+            hAxis: {minValue: REPORTSTARTDATE_PLACEHOLDER, maxValue: REPORTENDDATE_PLACEHOLDER},
+            curveType: 'function',
+            interval: {
+              'i0': { style:'area', color: color},
+              'i1': { style:'area', color: color}
+            }
           });
         });
       }
