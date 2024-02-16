@@ -104,7 +104,7 @@ Describe 'Get-BucketedMetricsForPeriod' {
             ToDate          = [DateTime]"2019-05-21"
             Interval        = New-Timespan -D 4;
             IsFix           = $true;
-            CommitAges      = @(New-Timespan -H 24);
+            CommitAges      = @(New-Timespan -H 12);
         }
         
         $releaseOne = [PSCustomObject]@{
@@ -114,7 +114,7 @@ Describe 'Get-BucketedMetricsForPeriod' {
             ToDate          = [DateTime]"2019-05-17"
             Interval        = New-Timespan -D 1;
             IsFix           = $false;
-            CommitAges      = @(New-Timespan -H 24);
+            CommitAges      = @(New-Timespan -H 36);
         }
     
         $releases = @($releaseTwo, $releaseOne)
@@ -130,8 +130,8 @@ Describe 'Get-BucketedMetricsForPeriod' {
             $bucketedMetrics.DeploymentFrequencyHigh | Should -Be "4"
             $bucketedMetrics.MttrHours | Should -Be 96 # Single recovery took four whole days
             $bucketedMetrics.LeadTimeDays | Should -Be "1" # Both releases have a lead time of one day
-            $bucketedMetrics.LeadTimeLow | Should -Be "1"
-            $bucketedMetrics.LeadTimeHigh | Should -Be "1"
+            $bucketedMetrics.LeadTimeLow | Should -Be "0.5"
+            $bucketedMetrics.LeadTimeHigh | Should -Be "1.5"
             $bucketedMetrics.FailRate | Should -Be "0.5" # One of two releases was a failure
             $bucketedMetrics.EndDate | Should -Be $endDate
         }
