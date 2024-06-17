@@ -150,11 +150,17 @@ function global:Get-ReleaseMetrics {
         [Parameter(Mandatory=$true)]
         [string]$startDate,
         [string[]]$ignoreReleases,
-        [string[]]$authors
+        [string[]]$authors,
+        [string]$componentName
     )
     $thisRelease = $releases[0]
+    $previousSuccess = $thisRelease
     for ($i = 1; $i -lt $releases.Count; $i++) {
         $previousRelease = $releases[$i]
+
+        if ($releases[$i].IsFix) {
+            $previousSuccess = $releases[$i]
+        }
 
         if (Assert-ReleaseNotIgnored $ThisRelease.TagRef $ignoreReleases) {
             $CommitAges = Get-CommitsBetweenTags $previousRelease.TagRef $thisRelease.TagRef $subDirs $authors | Foreach-Object -Process { $thisRelease.Date - $_.Date } 
@@ -167,14 +173,30 @@ function global:Get-ReleaseMetrics {
             Write-Warning "Release $($thisRelease.TagRef) has no relevant commits and will be ignored"
         }
         else {
-            [PSCustomObject]@{
-                From             = $previousRelease.TagRef;
-                To               = $thisRelease.TagRef;
-                FromDate         = $previousRelease.Date;
-                ToDate           = $thisRelease.Date;
-                Interval         = $thisRelease.Date - $previousRelease.Date;
-                IsFix            = $thisRelease.IsFix;
-                CommitAges       = $CommitAges;
+            if ($componentName -ne ""){
+                [PSCustomObject]@{
+                    Component        = $componentName;
+                    From             = $previousRelease.TagRef;
+                    To               = $thisRelease.TagRef;
+                    FromDate         = $previousRelease.Date;
+                    ToDate           = $thisRelease.Date;
+                    Interval         = $thisRelease.Date - $previousRelease.Date;
+                    IsFix            = $thisRelease.IsFix;
+                    FailureDuration  = $thisRelease.Date - $previousSuccess.Date;
+                    CommitAges       = $CommitAges;
+                }
+            }
+            else {
+                [PSCustomObject]@{
+                    From             = $previousRelease.TagRef;
+                    To               = $thisRelease.TagRef;
+                    FromDate         = $previousRelease.Date;
+                    ToDate           = $thisRelease.Date;
+                    Interval         = $thisRelease.Date - $previousRelease.Date;
+                    IsFix            = $thisRelease.IsFix;
+                    FailureDuration  = $thisRelease.Date - $previousSuccess.Date;
+                    CommitAges       = $CommitAges;
+                }
             }
         }
 
@@ -261,7 +283,7 @@ function Get-BucketedMetricsForPeriod($releaseMetrics, $endDate) {
     }
 
     if ($failedreleaseCount -gt 0){
-        $mttrMeasures = $releaseMetrics | Where-Object { $_.IsFix } | ForEach-Object { $_.Interval.TotalHours } | Measure-Object -Average
+        $mttrMeasures = $releaseMetrics | Where-Object { $_.IsFix } | ForEach-Object { $_.FailureDuration.TotalHours } | Measure-Object -Average
         $mttrAverage = $mttrMeasures.Average;
     }
     else {
