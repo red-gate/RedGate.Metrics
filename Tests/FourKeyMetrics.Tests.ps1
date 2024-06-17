@@ -96,6 +96,7 @@ Describe 'Get-BucketedMetricsForPeriod' {
             ToDate          = [DateTime]"2019-05-21"
             Interval        = New-Timespan -D 4;
             IsFix           = $true;
+            FailureDuration = New-Timespan -D 4;
             CommitAges      = @(New-Timespan -H 24);
         }
         
@@ -106,6 +107,7 @@ Describe 'Get-BucketedMetricsForPeriod' {
             ToDate          = [DateTime]"2019-05-17"
             Interval        = New-Timespan -D 1;
             IsFix           = $false;
+            FailureDuration = New-Timespan -D 0;
             CommitAges      = @(New-Timespan -H 24);
         }
     
@@ -136,6 +138,7 @@ Describe 'Get-BucketedReleaseMetricsForReport' {
                 ToDate          = [DateTime]"2019-05-13"
                 Interval        = New-Timespan -D 42;
                 IsFix           = $false;
+                FailureDuration = New-Timespan -D 0;
                 CommitAges      = @(New-Timespan -D 20);},
             [PSCustomObject]@{
                 From            = "releases/0.1";
@@ -144,6 +147,7 @@ Describe 'Get-BucketedReleaseMetricsForReport' {
                 ToDate          = [DateTime]"2019-05-21"
                 Interval        = New-Timespan -D 8;
                 IsFix           = $false;
+                FailureDuration = New-Timespan -D 0;
                 CommitAges      = @(New-Timespan -D 3.5);},
             [PSCustomObject]@{
                 From            = "releases/0.2";
@@ -152,6 +156,7 @@ Describe 'Get-BucketedReleaseMetricsForReport' {
                 ToDate          = [DateTime]"2019-05-22"
                 Interval        = New-Timespan -D 1;
                 IsFix           = $true;
+                FailureDuration = New-Timespan -D 1;
                 CommitAges      = @(New-Timespan -D 0.5);},
             [PSCustomObject]@{
                 From            = "releases/0.3/fix";
@@ -160,6 +165,7 @@ Describe 'Get-BucketedReleaseMetricsForReport' {
                 ToDate          = [DateTime]"2019-05-28"
                 Interval        = New-Timespan -D 6;
                 IsFix           = $false;
+                FailureDuration = New-Timespan -D 0;
                 CommitAges      = @(New-Timespan -D 2);},
             [PSCustomObject]@{
                 From            = "releases/0.4";
@@ -168,6 +174,7 @@ Describe 'Get-BucketedReleaseMetricsForReport' {
                 ToDate          = [DateTime]"2019-06-04"
                 Interval        = New-Timespan -D 7;
                 IsFix           = $false;
+                FailureDuration = New-Timespan -D 0;
                 CommitAges      = @(New-Timespan -D 4);}
             );        
 
