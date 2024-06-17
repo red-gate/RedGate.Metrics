@@ -30,6 +30,325 @@ Describe 'Check median calculations' {
             }
     }
 }
+
+Describe 'Merge-ReleaseMetricsIntoOnePseudoRepository' {
+    Context 'Given releases for multiple repositories' {
+        $releases = @(
+            [PSCustomObject]@{
+                Component       = "Component1";
+                From            = "releases/0.0";
+                To              = "releases/0.1";
+                FromDate        = [DateTime]"2019-04-01"
+                ToDate          = [DateTime]"2019-05-13"
+                Interval        = New-Timespan -D 42;
+                IsFix           = $false;
+                FailureDuration = New-Timespan -D 42;
+                CommitAges      = @(New-Timespan -D 20);},
+            [PSCustomObject]@{
+                Component       = "Component1";
+                From            = "releases/0.1";
+                To              = "releases/0.2";
+                FromDate        = [DateTime]"2019-05-13"
+                ToDate          = [DateTime]"2019-05-21"
+                Interval        = New-Timespan -D 8;
+                IsFix           = $false;
+                FailureDuration = New-Timespan -D 8;
+                CommitAges      = @(New-Timespan -D 3.5);},
+            [PSCustomObject]@{
+                Component       = "Component1";
+                From            = "releases/0.2";
+                To              = "releases/0.3/fix";
+                FromDate        = [DateTime]"2019-05-21"
+                ToDate          = [DateTime]"2019-05-24"
+                Interval        = New-Timespan -D 3;
+                IsFix           = $true;
+                FailureDuration = New-Timespan -D 3;
+                CommitAges      = @(New-Timespan -D 0.5);},
+            [PSCustomObject]@{
+                Component       = "Component2";
+                From            = "releases/0.1";
+                To              = "releases/0.2";
+                FromDate        = [DateTime]"2019-05-12"
+                ToDate          = [DateTime]"2019-05-22"
+                Interval        = New-Timespan -D 10;
+                IsFix           = $false;
+                FailureDuration = New-Timespan -D 10;
+                CommitAges      = @(New-Timespan -D 2);}
+        );
+
+        $MergedMetrics = Merge-ReleaseMetricsIntoOnePseudoRepository $releases
+
+        $expectedReleasesAfterMerge = @(
+            [PSCustomObject]@{
+                Component       = "Component1";
+                From            = "releases/0.2";
+                To              = "releases/0.3/fix";
+                FromDate        = [DateTime]"2019-05-22"
+                ToDate          = [DateTime]"2019-05-24"
+                Interval        = New-Timespan -D 2;
+                IsFix           = $true;
+                FailureDuration = New-Timespan -D 3;
+                CommitAges      = @(New-Timespan -D 0.5);},
+            [PSCustomObject]@{
+                Component       = "Component2";
+                From            = "releases/0.1";
+                To              = "releases/0.2";
+                FromDate        = [DateTime]"2019-05-21"
+                ToDate          = [DateTime]"2019-05-22"
+                Interval        = New-Timespan -D 1;
+                IsFix           = $false;
+                FailureDuration = New-Timespan -D 10;
+                CommitAges      = @(New-Timespan -D 2);},
+            [PSCustomObject]@{
+                Component       = "Component1";
+                From            = "releases/0.1";
+                To              = "releases/0.2";
+                FromDate        = [DateTime]"2019-05-13"
+                ToDate          = [DateTime]"2019-05-21"
+                Interval        = New-Timespan -D 8;
+                IsFix           = $false;
+                FailureDuration = New-Timespan -D 8;
+                CommitAges      = @(New-Timespan -D 3.5);},
+            [PSCustomObject]@{
+                Component       = "Component1";
+                From            = "releases/0.0";
+                To              = "releases/0.1";
+                FromDate        = [DateTime]"2019-04-01"
+                ToDate          = [DateTime]"2019-05-13"
+                Interval        = New-Timespan -D 42;
+                IsFix           = $false;
+                FailureDuration = New-Timespan -D 42;
+                CommitAges      = @(New-Timespan -D 20);}
+        );
+
+        It "should return the expected set of metrics" {
+            $MergedMetrics.Count | Should -Be $expectedReleasesAfterMerge.Count
+            for ($i = 0; $i -lt $expectedReleasesAfterMerge.count; $i++)
+            {
+                $MergedMetrics[$i].Component | Should -Be $expectedReleasesAfterMerge[$i].Component
+                $MergedMetrics[$i].From | Should -Be $expectedReleasesAfterMerge[$i].From
+                $MergedMetrics[$i].To | Should -Be $expectedReleasesAfterMerge[$i].To
+                $MergedMetrics[$i].FromDate | Should -Be $expectedReleasesAfterMerge[$i].FromDate
+                $MergedMetrics[$i].ToDate | Should -Be $expectedReleasesAfterMerge[$i].ToDate
+                $MergedMetrics[$i].Interval | Should -Be $expectedReleasesAfterMerge[$i].Interval
+                $MergedMetrics[$i].IsFix | Should -Be $expectedReleasesAfterMerge[$i].IsFix
+                $MergedMetrics[$i].FailureDuration | Should -Be $expectedReleasesAfterMerge[$i].FailureDuration
+                $MergedMetrics[$i].CommitAges | Should -Be $expectedReleasesAfterMerge[$i].CommitAges
+            }
+        }
+    }
+    Context 'Given releases where the oldest release is a fix' {
+        $releases = @(
+            [PSCustomObject]@{
+                Component       = "Component1";
+                From            = "releases/0.0";
+                To              = "releases/0.1/fix";
+                FromDate        = [DateTime]"2019-04-01"
+                ToDate          = [DateTime]"2019-05-13"
+                Interval        = New-Timespan -D 42;
+                IsFix           = $true;
+                FailureDuration = New-Timespan -D 42;
+                CommitAges      = @(New-Timespan -D 20);},
+            [PSCustomObject]@{
+                Component       = "Component1";
+                From            = "releases/0.1/fix";
+                To              = "releases/0.2";
+                FromDate        = [DateTime]"2019-05-13"
+                ToDate          = [DateTime]"2019-05-21"
+                Interval        = New-Timespan -D 8;
+                IsFix           = $false;
+                FailureDuration = New-Timespan -D 8;
+                CommitAges      = @(New-Timespan -D 3.5);}
+        );
+
+        $MergedMetrics = Merge-ReleaseMetricsIntoOnePseudoRepository $releases
+
+        $expectedReleasesAfterMerge = @(
+            [PSCustomObject]@{
+                Component       = "Component1";
+                From            = "releases/0.1/fix";
+                To              = "releases/0.2";
+                FromDate        = [DateTime]"2019-05-13"
+                ToDate          = [DateTime]"2019-05-21"
+                Interval        = New-Timespan -D 8;
+                IsFix           = $false;
+                FailureDuration = New-Timespan -D 8;
+                CommitAges      = @(New-Timespan -D 3.5);},
+            [PSCustomObject]@{
+                Component       = "Component1";
+                From            = "releases/0.0";
+                To              = "releases/0.1/fix";
+                FromDate        = [DateTime]"2019-04-01"
+                ToDate          = [DateTime]"2019-05-13"
+                Interval        = New-Timespan -D 42;
+                IsFix           = $true;
+                FailureDuration = New-Timespan -D 42;
+                CommitAges      = @(New-Timespan -D 20);}
+        );
+
+        It "should return the expected set of metrics" {
+            $MergedMetrics.Count | Should -Be $expectedReleasesAfterMerge.Count
+            for ($i = 0; $i -lt $expectedReleasesAfterMerge.count; $i++)
+            {
+                $MergedMetrics[$i].Component | Should -Be $expectedReleasesAfterMerge[$i].Component
+                $MergedMetrics[$i].From | Should -Be $expectedReleasesAfterMerge[$i].From
+                $MergedMetrics[$i].To | Should -Be $expectedReleasesAfterMerge[$i].To
+                $MergedMetrics[$i].FromDate | Should -Be $expectedReleasesAfterMerge[$i].FromDate
+                $MergedMetrics[$i].ToDate | Should -Be $expectedReleasesAfterMerge[$i].ToDate
+                $MergedMetrics[$i].Interval | Should -Be $expectedReleasesAfterMerge[$i].Interval
+                $MergedMetrics[$i].IsFix | Should -Be $expectedReleasesAfterMerge[$i].IsFix
+                $MergedMetrics[$i].FailureDuration | Should -Be $expectedReleasesAfterMerge[$i].FailureDuration
+                $MergedMetrics[$i].CommitAges | Should -Be $expectedReleasesAfterMerge[$i].CommitAges
+            }
+        }
+    }
+    Context 'Given releases for multiple repositories with overlapping errors' {
+        $releases = @(
+            [PSCustomObject]@{
+                Component       = "Component1";
+                From            = "releases/0.0";
+                To              = "releases/0.1";
+                FromDate        = [DateTime]"2019-04-01"
+                ToDate          = [DateTime]"2019-05-13"
+                Interval        = New-Timespan -D 42;
+                IsFix           = $false;
+                FailureDuration = New-Timespan -D 42;
+                CommitAges      = @(New-Timespan -D 20);},
+            [PSCustomObject]@{
+                Component       = "Component1";
+                From            = "releases/0.1";
+                To              = "releases/0.2/fix";
+                FromDate        = [DateTime]"2019-05-13"
+                ToDate          = [DateTime]"2019-05-21"
+                Interval        = New-Timespan -D 8;
+                IsFix           = $true;
+                FailureDuration = New-Timespan -D 8;
+                CommitAges      = @(New-Timespan -D 3.5);},
+            [PSCustomObject]@{
+                Component       = "Component1";
+                From            = "releases/0.2/fix";
+                To              = "releases/0.3";
+                FromDate        = [DateTime]"2019-05-21"
+                ToDate          = [DateTime]"2019-05-24"
+                Interval        = New-Timespan -D 3;
+                IsFix           = $false;
+                FailureDuration = New-Timespan -D 3;
+                CommitAges      = @(New-Timespan -D 0.5);},
+            [PSCustomObject]@{
+                Component       = "Component2";
+                From            = "releases/0.1";
+                To              = "releases/0.2";
+                FromDate        = [DateTime]"2019-04-22"
+                ToDate          = [DateTime]"2019-05-15"
+                Interval        = New-Timespan -D 23;
+                IsFix           = $false;
+                FailureDuration = New-Timespan -D 23;
+                CommitAges      = @(New-Timespan -D 2);},
+            [PSCustomObject]@{
+                Component       = "Component2";
+                From            = "releases/0.2";
+                To              = "releases/0.3/fix";
+                FromDate        = [DateTime]"2019-05-15"
+                ToDate          = [DateTime]"2019-05-23"
+                Interval        = New-Timespan -D 8;
+                IsFix           = $true;
+                FailureDuration = New-Timespan -D 8;
+                CommitAges      = @(New-Timespan -D 4);},
+            [PSCustomObject]@{
+                Component       = "Component2";
+                From            = "releases/0.3/fix";
+                To              = "releases/0.4";
+                FromDate        = [DateTime]"2019-05-23"
+                ToDate          = [DateTime]"2019-05-25"
+                Interval        = New-Timespan -D 2;
+                IsFix           = $false;
+                FailureDuration = New-Timespan -D 2;
+                CommitAges      = @(New-Timespan -D 4);}
+            );
+
+        $MergedMetrics = Merge-ReleaseMetricsIntoOnePseudoRepository $releases
+
+        $expectedReleasesAfterMerge = @(
+            [PSCustomObject]@{
+                Component       = "Component2";
+                From            = "releases/0.3/fix";
+                To              = "releases/0.4";
+                FromDate        = [DateTime]"2019-05-24"
+                ToDate          = [DateTime]"2019-05-25"
+                Interval        = New-Timespan -D 1;
+                IsFix           = $false;
+                FailureDuration = New-Timespan -D 2;
+                CommitAges      = @(New-Timespan -D 4);},
+            [PSCustomObject]@{
+                Component       = "Component1";
+                From            = "releases/0.2/fix";
+                To              = "releases/0.3";
+                FromDate        = [DateTime]"2019-05-23"
+                ToDate          = [DateTime]"2019-05-24"
+                Interval        = New-Timespan -D 1;
+                IsFix           = $false;
+                FailureDuration = New-Timespan -D 3;
+                CommitAges      = @(New-Timespan -D 0.5);},
+            [PSCustomObject]@{
+                Component       = "Component2";
+                From            = "releases/0.2";
+                To              = "releases/0.3/fix";
+                FromDate        = [DateTime]"2019-05-21"
+                ToDate          = [DateTime]"2019-05-23"
+                Interval        = New-Timespan -D 2;
+                IsFix           = $true;
+                FailureDuration = New-Timespan -D 10;
+                CommitAges      = @(New-Timespan -D 4);},
+            [PSCustomObject]@{
+                Component       = "Component1";
+                From            = "releases/0.1";
+                To              = "releases/0.2/fix";
+                FromDate        = [DateTime]"2019-05-15"
+                ToDate          = [DateTime]"2019-05-21"
+                Interval        = New-Timespan -D 6;
+                IsFix           = $false;
+                FailureDuration = New-Timespan -D 8;
+                CommitAges      = @(New-Timespan -D 3.5);},
+            [PSCustomObject]@{
+                Component       = "Component2";
+                From            = "releases/0.1";
+                To              = "releases/0.2";
+                FromDate        = [DateTime]"2019-05-13"
+                ToDate          = [DateTime]"2019-05-15"
+                Interval        = New-Timespan -D 2;
+                IsFix           = $false;
+                FailureDuration = New-Timespan -D 23;
+                CommitAges      = @(New-Timespan -D 2);},
+            [PSCustomObject]@{
+                Component       = "Component1";
+                From            = "releases/0.0";
+                To              = "releases/0.1";
+                FromDate        = [DateTime]"2019-04-01"
+                ToDate          = [DateTime]"2019-05-13"
+                Interval        = New-Timespan -D 42;
+                IsFix           = $false;
+                FailureDuration = New-Timespan -D 42;
+                CommitAges      = @(New-Timespan -D 20);}
+        );
+
+        It "should return the expected set of metrics" {
+            $MergedMetrics.Count | Should -Be $expectedReleasesAfterMerge.Count
+            for ($i = 0; $i -lt $expectedReleasesAfterMerge.count; $i++)
+            {
+                $MergedMetrics[$i].Component | Should -Be $expectedReleasesAfterMerge[$i].Component
+                $MergedMetrics[$i].From | Should -Be $expectedReleasesAfterMerge[$i].From
+                $MergedMetrics[$i].To | Should -Be $expectedReleasesAfterMerge[$i].To
+                $MergedMetrics[$i].FromDate | Should -Be $expectedReleasesAfterMerge[$i].FromDate
+                $MergedMetrics[$i].ToDate | Should -Be $expectedReleasesAfterMerge[$i].ToDate
+                $MergedMetrics[$i].Interval | Should -Be $expectedReleasesAfterMerge[$i].Interval
+                $MergedMetrics[$i].IsFix | Should -Be $expectedReleasesAfterMerge[$i].IsFix
+                $MergedMetrics[$i].FailureDuration | Should -Be $expectedReleasesAfterMerge[$i].FailureDuration
+                $MergedMetrics[$i].CommitAges | Should -Be $expectedReleasesAfterMerge[$i].CommitAges
+            }
+        }
+    }
+}
+
 Describe 'Get-BucketedMetricsForPeriod' {
     Context 'Given no releases' {
         $releases = @()
