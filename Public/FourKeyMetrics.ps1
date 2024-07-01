@@ -153,13 +153,20 @@ function global:Get-ReleaseMetrics {
         [string[]]$authors,
         [string]$componentName
     )
-    $thisRelease = $releases[0]
-    $previousSuccess = $thisRelease
-    for ($i = 1; $i -lt $releases.Count; $i++) {
-        $previousRelease = $releases[$i]
 
-        if ($releases[$i].IsFix) {
-            $previousSuccess = $releases[$i]
+    $releases = $releases | Sort-Object -Property Date
+    $previousSuccess = $releases[0]
+    for ($i = 0; $i -lt $releases.Count; $i++) {
+
+        $previousRelease = $releases[$i]
+        $thisRelease = $releases[$i+1]
+
+        if ($previousRelease.Date -le $startDate) {
+            continue
+        }
+
+        if ($thisRelease.IsFix) {
+            $previousSuccess = $previousRelease
         }
 
         if (Assert-ReleaseNotIgnored $ThisRelease.TagRef $ignoreReleases) {
@@ -199,12 +206,6 @@ function global:Get-ReleaseMetrics {
                 }
             }
         }
-
-        if ($previousRelease.Date -le $startDate) {
-            break
-        }
-
-        $thisRelease = $previousRelease
     }
 }
 
