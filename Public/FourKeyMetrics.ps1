@@ -153,10 +153,9 @@ function global:Get-ReleaseMetrics {
         [string[]]$authors,
         [string]$componentName
     )
-
     $releases = $releases | Sort-Object -Property Date
     $previousSuccess = $releases[0]
-    for ($i = 0; $i -lt $releases.Count; $i++) {
+    for ($i = 0; $i -lt $releases.Count-1; $i++) {
 
         $previousRelease = $releases[$i]
         $thisRelease = $releases[$i+1]
@@ -180,30 +179,16 @@ function global:Get-ReleaseMetrics {
             Write-Warning "Release $($thisRelease.TagRef) has no relevant commits and will be ignored"
         }
         else {
-            if ($componentName -ne ""){
-                [PSCustomObject]@{
-                    Component        = $componentName;
-                    From             = $previousRelease.TagRef;
-                    To               = $thisRelease.TagRef;
-                    FromDate         = $previousRelease.Date;
-                    ToDate           = $thisRelease.Date;
-                    Interval         = $thisRelease.Date - $previousRelease.Date;
-                    IsFix            = $thisRelease.IsFix;
-                    FailureDuration  = $thisRelease.Date - $previousSuccess.Date;
-                    CommitAges       = $CommitAges;
-                }
-            }
-            else {
-                [PSCustomObject]@{
-                    From             = $previousRelease.TagRef;
-                    To               = $thisRelease.TagRef;
-                    FromDate         = $previousRelease.Date;
-                    ToDate           = $thisRelease.Date;
-                    Interval         = $thisRelease.Date - $previousRelease.Date;
-                    IsFix            = $thisRelease.IsFix;
-                    FailureDuration  = $thisRelease.Date - $previousSuccess.Date;
-                    CommitAges       = $CommitAges;
-                }
+            [PSCustomObject]@{
+                Component        = $componentName;
+                From             = $previousRelease.TagRef;
+                To               = $thisRelease.TagRef;
+                FromDate         = $previousRelease.Date;
+                ToDate           = $thisRelease.Date;
+                Interval         = $thisRelease.Date - $previousRelease.Date;
+                IsFix            = $thisRelease.IsFix;
+                FailureDuration  = $thisRelease.Date - $previousSuccess.Date;
+                CommitAges       = $CommitAges;
             }
         }
     }
@@ -276,7 +261,7 @@ function global:Merge-ReleaseMetricsIntoOnePseudoRepository {
     $lastFix = 0
 
     # re-process the metrics now we have the full set across all repos
-    for ($i = 0; $i -lt $releaseMetrics.Count -1; $i++) {
+    for ($i = 0; $i -lt $releaseMetrics.Count-1; $i++) {
         $previousMetric = $releaseMetrics[$i+1]
 
         $releaseMetrics[$i].FromDate = $previousMetric.ToDate
