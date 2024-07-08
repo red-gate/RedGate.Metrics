@@ -150,11 +150,23 @@ function global:Get-ReleaseMetrics {
         [Parameter(Mandatory=$true)]
         [string]$startDate,
         [string[]]$ignoreReleases,
-        [string[]]$authors
+        [string[]]$authors,
+        [string]$componentName
     )
-    $thisRelease = $releases[0]
-    for ($i = 1; $i -lt $releases.Count; $i++) {
+    $releases = $releases | Sort-Object -Property Date
+    $previousSuccess = $releases[0]
+    for ($i = 0; $i -lt $releases.Count-1; $i++) {
+
         $previousRelease = $releases[$i]
+        $thisRelease = $releases[$i+1]
+
+        if ($previousRelease.Date -le $startDate) {
+            continue
+        }
+
+        if (!$thisRelease.IsFix) {
+            $previousSuccess = $previousRelease
+        }
 
         if (Assert-ReleaseNotIgnored $ThisRelease.TagRef $ignoreReleases) {
             $CommitAges = Get-CommitsBetweenTags $previousRelease.TagRef $thisRelease.TagRef $subDirs $authors | Foreach-Object -Process { $thisRelease.Date - $_.Date } 
@@ -168,21 +180,17 @@ function global:Get-ReleaseMetrics {
         }
         else {
             [PSCustomObject]@{
+                Component        = $componentName;
                 From             = $previousRelease.TagRef;
                 To               = $thisRelease.TagRef;
                 FromDate         = $previousRelease.Date;
                 ToDate           = $thisRelease.Date;
                 Interval         = $thisRelease.Date - $previousRelease.Date;
                 IsFix            = $thisRelease.IsFix;
+                FailureDuration  = $thisRelease.Date - $previousSuccess.Date;
                 CommitAges       = $CommitAges;
             }
         }
-
-        if ($previousRelease.Date -le $startDate) {
-            break
-        }
-
-        $thisRelease = $previousRelease
     }
 }
 
@@ -240,6 +248,64 @@ function global:Get-BucketedReleaseMetricsForReport {
     }
 }
 
+function global:Merge-ReleaseMetricsIntoOnePseudoRepository {
+    [CmdletBinding()]
+    param(
+        # Pre-processed release metrics
+        [PSCustomObject[]]$releaseMetrics
+    )
+    # Sort recent first for ease of processing
+    $releaseMetrics = $releaseMetrics | Sort-Object -Property ToDate -Descending
+
+    [System.Collections.ArrayList]$brokenComponents = @()
+    $lastFix = 0
+
+    # re-process the metrics now we have the full set across all repos
+    for ($i = 0; $i -lt $releaseMetrics.Count-1; $i++) {
+        $previousMetric = $releaseMetrics[$i+1]
+
+        $releaseMetrics[$i].FromDate = $previousMetric.ToDate
+        $releaseMetrics[$i].interval = $releaseMetrics[$i].ToDate - $previousMetric.ToDate
+
+        if ($releaseMetrics[$i].IsFix) {
+            if ($brokenComponents.Count -ne 0) {
+                $releaseMetrics[$i].IsFix = $false
+            }
+
+            if ($brokenComponents.Count -eq 0) {
+                $lastFix = $i
+            }
+
+            if (!$brokenComponents.Contains($releaseMetrics[$i].Component)) {
+                $null = $brokenComponents.Add($releaseMetrics[$i].Component)
+            }
+        }
+        else {
+            if ($brokenComponents.Contains($releaseMetrics[$i].Component)) {
+                $null = $brokenComponents.Remove($releaseMetrics[$i].Component)
+
+                if ($brokenComponents.Count -eq 0) {
+                    $releaseMetrics[$lastFix].FailureDuration = $releaseMetrics[$lastFix].ToDate - $releaseMetrics[$i].ToDate
+                }
+            }
+        }
+    }
+
+    if ($brokenComponents.Count -ne 0)
+    {
+        $finalMetric = $releaseMetrics.Count -1
+        if ($releaseMetrics[$finalMetric].IsFix) {
+            # We don't know when the error started so take our oldest available date
+            $releaseMetrics[$lastFix].FailureDuration = $releaseMetrics[$lastFix].ToDate - $releaseMetrics[$finalMetric].FromDate
+        }
+        else {
+            $releaseMetrics[$lastFix].FailureDuration = $releaseMetrics[$lastFix].ToDate - $releaseMetrics[$finalMetric].ToDate
+        }
+    }
+
+    return $releaseMetrics
+}
+
 <#
 .SYNOPSIS
 Calculate bucketed values for the Four Key Metrics, based on a provided set of releases
@@ -261,7 +327,7 @@ function Get-BucketedMetricsForPeriod($releaseMetrics, $endDate) {
     }
 
     if ($failedreleaseCount -gt 0){
-        $mttrMeasures = $releaseMetrics | Where-Object { $_.IsFix } | ForEach-Object { $_.Interval.TotalHours } | Measure-Object -Average
+        $mttrMeasures = $releaseMetrics | Where-Object { $_.IsFix } | ForEach-Object { $_.FailureDuration.TotalHours } | Measure-Object -Average
         $mttrAverage = $mttrMeasures.Average;
     }
     else {
