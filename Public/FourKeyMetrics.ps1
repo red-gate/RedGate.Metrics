@@ -164,7 +164,7 @@ function global:Get-ReleaseMetrics {
             continue
         }
 
-        if ($thisRelease.IsFix) {
+        if (!$thisRelease.IsFix) {
             $previousSuccess = $previousRelease
         }
 
