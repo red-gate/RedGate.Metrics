@@ -154,7 +154,6 @@ function global:Get-ReleaseMetrics {
         [string]$componentName
     )
     $releases = $releases | Sort-Object -Property Date
-    $previousSuccess = $releases[0]
     for ($i = 0; $i -lt $releases.Count-1; $i++) {
 
         $previousRelease = $releases[$i]
@@ -162,10 +161,6 @@ function global:Get-ReleaseMetrics {
 
         if ($previousRelease.Date -le $startDate) {
             continue
-        }
-
-        if (!$thisRelease.IsFix) {
-            $previousSuccess = $previousRelease
         }
 
         if (Assert-ReleaseNotIgnored $ThisRelease.TagRef $ignoreReleases) {
@@ -187,7 +182,7 @@ function global:Get-ReleaseMetrics {
                 ToDate           = $thisRelease.Date;
                 Interval         = $thisRelease.Date - $previousRelease.Date;
                 IsFix            = $thisRelease.IsFix;
-                FailureDuration  = $thisRelease.Date - $previousSuccess.Date;
+                FailureDuration  = $thisRelease.Date - $previousRelease.Date;
                 CommitAges       = $CommitAges;
             }
         }
