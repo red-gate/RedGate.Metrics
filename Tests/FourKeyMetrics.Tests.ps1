@@ -658,6 +658,82 @@ Describe 'Get-CommitsBetweenTags' {
         }
     }
 }
+Describe 'Get-ReleaseMetrics' {
+    Mock git {return (
+        "b78adbc2f,2020-08-25 09:15:30 +0000",
+        "17d887ea7,2020-08-25 10:54:28 +0100"
+    )}
+    Context 'Given a bad release followed by a fix' {
+        $releases = @(
+            [PSCustomObject]@{
+                TagRef            = "releases/0.0";
+                Date              = [DateTime]"2019-04-01";
+                IsFix             = $false },
+            [PSCustomObject]@{
+                TagRef            = "releases/0.1/fix";
+                Date              = [DateTime]"2019-04-02";
+                IsFix             = $true }
+        )
+        It 'should return a fix release with the same interval and failure duration'{
+            $releasemetrics = Get-ReleaseMetrics $releases $null "2018-01-01"
+            $releasemetrics[0].Interval         | Should -Be 1.00:00:00
+            $releasemetrics[0].IsFix            | Should -Be $true
+            $releasemetrics[0].FailureDuration  | Should -Be 1.00:00:00
+        }
+    }
+    Context 'Given a bad release followed by two attempted fixes' {
+        $releases = @(
+            [PSCustomObject]@{
+                TagRef            = "releases/0.0";
+                Date              = [DateTime]"2019-04-01";
+                IsFix             = $false },
+            [PSCustomObject]@{
+                TagRef            = "releases/0.1/fix";
+                Date              = [DateTime]"2019-04-02";
+                IsFix             = $true },
+            [PSCustomObject]@{
+                TagRef            = "releases/0.2/fix";
+                Date              = [DateTime]"2019-04-03";
+                IsFix             = $true }
+        )
+        It 'should ignore the interim fix and present a failure duration since the last known good release'{
+            $releasemetrics = Get-ReleaseMetrics $releases $null "2018-01-01"
+            $releasemetrics[0].Interval         | Should -Be 1.00:00:00
+            $releasemetrics[0].IsFix            | Should -Be $true
+            $releasemetrics[0].FailureDuration  | Should -Be $null
+            $releasemetrics[1].Interval         | Should -Be 1.00:00:00
+            $releasemetrics[1].IsFix            | Should -Be $true
+            $releasemetrics[1].FailureDuration  | Should -Be 2.00:00:00
+        }
+    }
+    Context 'Given a series of releases that starts and ends with a fix release' {
+        $releases = @(
+            [PSCustomObject]@{
+                TagRef            = "releases/0.0/fix";
+                Date              = [DateTime]"2019-04-01";
+                IsFix             = $true },
+            [PSCustomObject]@{
+                TagRef            = "releases/0.1";
+                Date              = [DateTime]"2019-04-02";
+                IsFix             = $false },
+            [PSCustomObject]@{
+                TagRef            = "releases/0.2/fix";
+                Date              = [DateTime]"2019-04-03";
+                IsFix             = $true }
+        )
+        It 'should report on standard release intevra and one fix interval'{
+            $releasemetrics = Get-ReleaseMetrics $releases $null "2018-01-01"
+            $releasemetrics[0].Interval         | Should -Be 1.00:00:00
+            $releasemetrics[0].IsFix            | Should -Be $false
+            $releasemetrics[0].FailureDuration  | Should -Be $null
+            $releasemetrics[1].Interval         | Should -Be 1.00:00:00
+            $releasemetrics[1].IsFix            | Should -Be $true
+            $releasemetrics[1].FailureDuration  | Should -Be 1.00:00:00
+        }
+    }
+}
+
+
 
 Describe 'ValueOrNull' {
     Context 'Given a value' {
