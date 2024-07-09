@@ -681,6 +681,31 @@ Describe 'Get-ReleaseMetrics' {
             $releasemetrics[0].FailureDuration  | Should -Be 1.00:00:00
         }
     }
+    Context 'Given a bad release followed by two attempted fixes' {
+        $releases = @(
+            [PSCustomObject]@{
+                TagRef            = "releases/0.0";
+                Date              = [DateTime]"2019-04-01";
+                IsFix             = $false },
+            [PSCustomObject]@{
+                TagRef            = "releases/0.1/fix";
+                Date              = [DateTime]"2019-04-02";
+                IsFix             = $true },
+            [PSCustomObject]@{
+                TagRef            = "releases/0.2/fix";
+                Date              = [DateTime]"2019-04-03";
+                IsFix             = $true }
+        )
+        It 'should ignore the interim fix and present a failure duration since the last knwon good release'{
+            $releasemetrics = Get-ReleaseMetrics $releases $null "2018-01-01"
+            $releasemetrics[0].Interval         | Should -Be 1.00:00:00
+            $releasemetrics[0].IsFix            | Should -Be $true
+            $releasemetrics[0].FailureDuration  | Should -Be $null
+            $releasemetrics[1].Interval         | Should -Be 1.00:00:00
+            $releasemetrics[1].IsFix            | Should -Be $true
+            $releasemetrics[1].FailureDuration  | Should -Be 2.00:00:00
+        }
+    }
 }
 
 
