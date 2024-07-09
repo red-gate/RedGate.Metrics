@@ -658,6 +658,32 @@ Describe 'Get-CommitsBetweenTags' {
         }
     }
 }
+Describe 'Get-ReleaseMetrics' {
+    Mock git {return (
+        "b78adbc2f,2020-08-25 09:15:30 +0000",
+        "17d887ea7,2020-08-25 10:54:28 +0100"
+    )}
+    Context 'Given a bad release followed by a fix' {
+        $releases = @(
+            [PSCustomObject]@{
+                TagRef            = "releases/0.0";
+                Date              = [DateTime]"2019-04-01";
+                IsFix             = $false },
+            [PSCustomObject]@{
+                TagRef            = "releases/0.1/fix";
+                Date              = [DateTime]"2019-04-02";
+                IsFix             = $true }
+        )
+        It 'should return a fix release with the same interval and failure duration'{
+            $releasemetrics = Get-ReleaseMetrics $releases $null "2018-01-01"
+            $releasemetrics[0].Interval         | Should -Be 1.00:00:00
+            $releasemetrics[0].IsFix            | Should -Be $true
+            $releasemetrics[0].FailureDuration  | Should -Be 1.00:00:00
+        }
+    }
+}
+
+
 
 Describe 'ValueOrNull' {
     Context 'Given a value' {
